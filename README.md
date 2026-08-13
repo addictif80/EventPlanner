@@ -12,7 +12,11 @@ espace via `/register` — sa propre équipe (rôles admin/manager/staff), ses
 propres clients, catalogue, devis, factures, paramètres SMTP, numérotation...
 Les organisations sont complètement cloisonnées : aucun utilisateur ne peut
 voir ni modifier les données d'une autre organisation, y compris par accès
-direct à une URL (voir « Isolation multi-tenant » plus bas).
+direct à une URL (voir « Isolation multi-tenant » plus bas). Au-dessus des
+organisations, un rôle **super administrateur** donne accès à un panel de
+gestion de la plateforme (organisations, utilisateurs, impersonation,
+documents, tickets de support, blocage IP/email, SMTP système — voir
+« Administration plateforme » plus bas).
 
 Stack : PHP 8.1+ / MySQL (MariaDB) / Bootstrap 5 / Chart.js (CDN). Aucune
 dépendance Composer requise (autoloader, client SMTP et intégration Stripe
@@ -29,7 +33,7 @@ src/Models/      Modèles (PDO)
 views/           Vues PHP (Bootstrap 5)
 database/        schema.sql (structure complète, install neuve)
 database/migrations/  Migrations incrémentales (mise à jour d'une install existante)
-bin/             Scripts CLI (création admin, cron facturation récurrente, relances)
+bin/             Scripts CLI (création admin, promotion super admin, cron facturation récurrente, relances)
 storage/uploads/ Documents uploadés (hors du docroot public/)
 config/          Configuration (.env)
 ```
@@ -134,6 +138,7 @@ manquantes, dans l'ordre :
 ```bash
 mysql -u <db_user> -p <db_name> < database/migrations/002_advanced_features.sql
 mysql -u <db_user> -p <db_name> < database/migrations/003_multi_tenant.sql
+mysql -u <db_user> -p <db_name> < database/migrations/004_platform_admin.sql
 ```
 
 La migration `003` (passage au multi-tenant) regroupe toutes vos données
@@ -254,3 +259,48 @@ Cette isolation a été testée bout en bout avec deux organisations distinctes
 export CSV, utilisateurs, flux ICS, portail client, RSVP) : tout accès direct
 d'une organisation aux données d'une autre renvoie une 404, et aucune liste
 ou export ne mélange les deux.
+
+## Administration plateforme (super admin)
+
+Au-dessus des organisations (tenants), un rôle **super administrateur**
+(`users.is_super_admin`) donne accès à un panel `/admin` séparé, réservé à
+l'équipe qui exploite la plateforme elle-même :
+
+- **Tableau de bord** : organisations, utilisateurs, tickets ouverts, IP/emails
+  bloqués.
+- **Organisations** : liste, détail, **suspension/réactivation** (un compte
+  suspendu ne peut plus se connecter, quel que soit son mot de passe).
+- **Utilisateurs** (toutes organisations confondues) : activation/désactivation,
+  promotion/rétrogradation super admin, recherche, et **impersonation**
+  (« se connecter en tant que ») pour du support sans connaître le mot de
+  passe du client — une bannière visible indique quand une session est
+  usurpée, avec un bouton de retour immédiat au compte admin d'origine.
+- **Documents** : accès en lecture/suppression à tous les documents uploadés,
+  toutes organisations confondues.
+- **Blocage IP / email** : une IP bloquée reçoit un 403 sur toute la
+  plateforme (vérifié à chaque requête) ; un email bloqué ne peut ni se
+  connecter ni s'inscrire.
+- **Tickets de support** : chaque organisation peut ouvrir un ticket depuis
+  **Support** dans son propre panel ; le super admin y répond depuis
+  `/admin/tickets`, avec notification email au client si le SMTP système est
+  configuré.
+- **Paramètres système** (`/admin/settings`) : serveur SMTP dédié aux emails
+  envoyés par la plateforme elle-même (réponses aux tickets, notifications de
+  compte...), entièrement distinct du SMTP propre à chaque organisation.
+- **Journal d'activité** (`/admin/activity-log`) : audit séparé
+  (`admin_activity_log`) de toutes les actions de niveau plateforme
+  (suspension, blocage, impersonation, réponses aux tickets...).
+
+Toutes ces routes sont protégées par `Auth::requireSuperAdmin()` (403 sinon)
+et sont indépendantes du scoping `organization_id` des modèles standards —
+elles interrogent volontairement toutes les organisations.
+
+### Créer le premier super administrateur
+
+```bash
+# 1. Créez d'abord un compte normal (organisation + admin), si ce n'est pas déjà fait :
+php bin/create_admin.php "Mon agence" "Votre Nom" vous@example.com VotreMotDePasse
+
+# 2. Promouvez ce compte en super administrateur de la plateforme :
+php bin/make_super_admin.php vous@example.com
+```

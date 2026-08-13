@@ -48,4 +48,46 @@ class Mailer
             $textBody
         );
     }
+
+    /**
+     * Platform-level emails (support ticket replies, account notices, org
+     * suspension, ...) use the system SMTP server configured by the super
+     * admin in Administration > Paramètres système, not a tenant's own SMTP.
+     *
+     * @param string|array $to
+     * @throws \RuntimeException
+     */
+    public static function sendSystem($to, string $subject, string $htmlBody, ?string $textBody = null): void
+    {
+        $settings = \App\Models\SystemSetting::get();
+
+        if (empty($settings['smtp_is_configured']) || empty($settings['smtp_host']) || empty($settings['smtp_from_email'])) {
+            throw new \RuntimeException("Aucun serveur SMTP système n'est configuré. Rendez-vous dans Administration > Paramètres système.");
+        }
+
+        $client = new SmtpClient([
+            'host' => $settings['smtp_host'],
+            'port' => $settings['smtp_port'],
+            'encryption' => $settings['smtp_encryption'],
+            'username' => $settings['smtp_username'],
+            'password' => $settings['smtp_password'],
+        ]);
+
+        $recipients = is_array($to) ? $to : [$to];
+
+        $client->send(
+            $settings['smtp_from_email'],
+            $settings['smtp_from_name'] ?: $settings['smtp_from_email'],
+            $recipients,
+            $subject,
+            $htmlBody,
+            $textBody
+        );
+    }
+
+    public static function isSystemConfigured(): bool
+    {
+        $s = \App\Models\SystemSetting::get();
+        return !empty($s['smtp_is_configured']) && !empty($s['smtp_host']) && !empty($s['smtp_from_email']);
+    }
 }

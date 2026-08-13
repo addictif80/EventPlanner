@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Session;
 use App\Core\View;
+use App\Models\BlockedEmail;
 
 class AuthController
 {
@@ -23,6 +24,11 @@ class AuthController
 
         $email = input('email', '');
         $password = input('password', '');
+
+        if (BlockedEmail::isBlocked($email)) {
+            Session::flash('error', 'Ce compte a été bloqué.');
+            redirect('/login');
+        }
 
         if (Auth::attempt($email, $password)) {
             redirect('/');

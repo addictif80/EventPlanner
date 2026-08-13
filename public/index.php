@@ -1,8 +1,15 @@
 <?php
 
 use App\Core\Auth;
+use App\Models\BlockedIp;
 
 require dirname(__DIR__) . '/src/bootstrap.php';
+
+$remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
+if ($remoteIp !== '' && BlockedIp::isBlocked($remoteIp)) {
+    http_response_code(403);
+    die('Accès refusé.');
+}
 
 $router = require dirname(__DIR__) . '/src/routes.php';
 

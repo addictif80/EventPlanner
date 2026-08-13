@@ -31,6 +31,13 @@ use App\Controllers\ExportController;
 use App\Controllers\CalendarController;
 use App\Controllers\StripeController;
 use App\Controllers\RegisterController;
+use App\Controllers\AdminController;
+use App\Controllers\AdminUserController;
+use App\Controllers\AdminDocumentController;
+use App\Controllers\AdminBlocklistController;
+use App\Controllers\AdminTicketController;
+use App\Controllers\AdminSettingsController;
+use App\Controllers\SupportController;
 
 $router = new Router();
 
@@ -228,6 +235,45 @@ $router->get('/settings/activity-log', fn() => SettingsController::activityLog()
 // Stripe (paiement en ligne optionnel)
 $router->post('/invoices/{id}/stripe-link', fn($p) => StripeController::createPaymentLink($p['id']));
 $router->get('/stripe/return/{id}', fn($p) => StripeController::handleReturn($p['id']));
+
+// Support (tickets, côté organisation)
+$router->get('/support', fn() => SupportController::index());
+$router->get('/support/create', fn() => SupportController::create());
+$router->post('/support', fn() => SupportController::store());
+$router->get('/support/{id}', fn($p) => SupportController::show($p['id']));
+$router->post('/support/{id}/reply', fn($p) => SupportController::reply($p['id']));
+
+// --- Administration plateforme (super admin uniquement) ---
+$router->get('/admin', fn() => AdminController::dashboard());
+$router->get('/admin/organizations', fn() => AdminController::organizations());
+$router->get('/admin/organizations/{id}', fn($p) => AdminController::showOrganization($p['id']));
+$router->post('/admin/organizations/{id}/status', fn($p) => AdminController::toggleOrganizationStatus($p['id']));
+$router->get('/admin/activity-log', fn() => AdminController::activityLog());
+
+$router->get('/admin/users', fn() => AdminUserController::index());
+$router->get('/admin/users/{id}/edit', fn($p) => AdminUserController::edit($p['id']));
+$router->post('/admin/users/{id}', fn($p) => AdminUserController::update($p['id']));
+$router->post('/admin/users/{id}/impersonate', fn($p) => AdminUserController::impersonate($p['id']));
+$router->post('/admin/stop-impersonating', fn() => AdminUserController::stopImpersonating());
+
+$router->get('/admin/documents', fn() => AdminDocumentController::index());
+$router->get('/admin/documents/{id}/download', fn($p) => AdminDocumentController::download($p['id']));
+$router->post('/admin/documents/{id}/delete', fn($p) => AdminDocumentController::destroy($p['id']));
+
+$router->get('/admin/blocklist', fn() => AdminBlocklistController::index());
+$router->post('/admin/blocklist/ips', fn() => AdminBlocklistController::storeIp());
+$router->post('/admin/blocklist/ips/{id}/delete', fn($p) => AdminBlocklistController::destroyIp($p['id']));
+$router->post('/admin/blocklist/emails', fn() => AdminBlocklistController::storeEmail());
+$router->post('/admin/blocklist/emails/{id}/delete', fn($p) => AdminBlocklistController::destroyEmail($p['id']));
+
+$router->get('/admin/tickets', fn() => AdminTicketController::index());
+$router->get('/admin/tickets/{id}', fn($p) => AdminTicketController::show($p['id']));
+$router->post('/admin/tickets/{id}/reply', fn($p) => AdminTicketController::reply($p['id']));
+$router->post('/admin/tickets/{id}/status', fn($p) => AdminTicketController::updateStatus($p['id']));
+
+$router->get('/admin/settings', fn() => AdminSettingsController::index());
+$router->post('/admin/settings/smtp', fn() => AdminSettingsController::updateSmtp());
+$router->post('/admin/settings/smtp/test', fn() => AdminSettingsController::testSmtp());
 
 // --- Routes publiques (sans authentification) ---
 $router->get('/rsvp/{token}', fn($p) => GuestController::rsvpForm($p['token']));

@@ -4,8 +4,12 @@ namespace App\Core;
 
 class View
 {
-    public static function render(string $template, array $data = [], ?string $layout = 'layouts/app'): void
+    public static function render(string $template, array $data = [], ?string $layout = null): void
     {
+        if ($layout === null && func_num_args() < 3) {
+            $layout = str_starts_with($template, 'admin/') ? 'layouts/admin' : 'layouts/app';
+        }
+
         $viewsPath = dirname(__DIR__, 2) . '/views';
         $file = $viewsPath . '/' . $template . '.php';
 

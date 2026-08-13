@@ -7,6 +7,7 @@ use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
 use App\Core\View;
+use App\Models\BlockedEmail;
 use App\Models\CompanySettings;
 use App\Models\EmailTemplate;
 use App\Models\Organization;
@@ -46,6 +47,10 @@ class RegisterController
         }
         if (strlen($password) < 8) {
             $errors[] = 'Le mot de passe doit contenir au moins 8 caractères.';
+        }
+
+        if (empty($errors) && BlockedEmail::isBlocked($email)) {
+            $errors[] = "Cette adresse email n'est pas autorisée à s'inscrire.";
         }
 
         if (empty($errors)) {

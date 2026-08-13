@@ -40,9 +40,23 @@ $flashes = flashes();
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/users') ?>"><i class="bi bi-person-badge me-2"></i>Utilisateurs</a></li>
       <?php endif; ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/settings') ?>"><i class="bi bi-gear me-2"></i>Paramètres</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/support') ?>"><i class="bi bi-life-preserver me-2"></i>Support</a></li>
+      <?php if (Auth::isSuperAdmin()): ?>
+      <li class="nav-item mt-3"><span class="text-uppercase small text-white-50 px-2">Plateforme</span></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin') ?>"><i class="bi bi-shield-lock me-2"></i>Super admin</a></li>
+      <?php endif; ?>
     </ul>
   </nav>
   <main class="flex-grow-1">
+    <?php if (Auth::isImpersonating()): ?>
+    <div class="alert alert-warning rounded-0 mb-0 d-flex justify-content-between align-items-center py-2 px-4">
+      <span><i class="bi bi-incognito me-2"></i>Vous êtes connecté en tant que <strong><?= View::e($user['name'] ?? '') ?></strong> (organisation <?= View::e($user['organization_id'] ?? '') ?>).</span>
+      <form method="post" action="<?= url('/admin/stop-impersonating') ?>" class="mb-0">
+        <?= csrf_field() ?>
+        <button class="btn btn-sm btn-dark">Revenir à mon compte admin</button>
+      </form>
+    </div>
+    <?php endif; ?>
     <header class="d-flex justify-content-between align-items-center border-bottom px-4 py-2 bg-white">
       <h1 class="h5 mb-0"><?= View::e($title ?? '') ?></h1>
       <div class="d-flex align-items-center gap-3">
