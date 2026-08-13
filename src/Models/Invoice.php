@@ -26,8 +26,8 @@ class Invoice extends Model
         $sql = 'SELECT i.*, c.first_name, c.last_name, c.company_name, c.email AS client_email,
                        c.address, c.postal_code, c.city, c.country, e.title AS event_title
                 FROM invoices i
-                LEFT JOIN clients c ON c.id = i.client_id
-                LEFT JOIN events e ON e.id = i.event_id
+                LEFT JOIN clients c ON c.id = i.client_id AND c.organization_id = i.organization_id
+                LEFT JOIN events e ON e.id = i.event_id AND e.organization_id = i.organization_id
                 WHERE i.id = ? AND i.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute([$id, Auth::organizationId()]);

@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
+use App\Models\Event;
 use App\Models\Task;
 
 class TaskController
@@ -13,6 +14,7 @@ class TaskController
     public static function store(string $eventId): void
     {
         Csrf::verifyOrFail();
+        if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
         Task::create([
             'event_id' => (int) $eventId,
             'title' => input('title', ''),

@@ -32,41 +32,45 @@ foreach ($rows as $row) {
     // (and therefore every scoped Model:: call below) reads from.
     $_SESSION['organization_id'] = (int) $row['organization_id'];
 
-    $invoice = Invoice::find($id);
-    if (!$invoice) {
-        continue;
+    try {
+        $invoice = Invoice::find($id);
+        if (!$invoice) {
+            continue;
+        }
+
+        $items = Invoice::items((int) $id);
+        $number = Invoice::nextNumber();
+
+        $newId = Invoice::create([
+            'invoice_number' => $number,
+            'quote_id' => $invoice['quote_id'],
+            'client_id' => $invoice['client_id'],
+            'event_id' => $invoice['event_id'],
+            'type' => $invoice['type'],
+            'status' => 'draft',
+            'issue_date' => date('Y-m-d'),
+            'due_date' => date('Y-m-d', strtotime('+30 days')),
+            'subtotal' => $invoice['subtotal'],
+            'tax_rate' => $invoice['tax_rate'],
+            'tax_amount' => $invoice['tax_amount'],
+            'total' => $invoice['total'],
+            'notes' => $invoice['notes'],
+            'is_recurring' => $invoice['is_recurring'],
+            'recurrence_interval' => $invoice['recurrence_interval'],
+            'recurrence_parent_id' => $invoice['id'],
+        ]);
+
+        Invoice::replaceItems($newId, $items);
+
+        if (!empty($invoice['recurrence_interval'])) {
+            Invoice::update((int) $id, ['recurrence_next_date' => date('Y-m-d', strtotime($map[$invoice['recurrence_interval']]))]);
+        }
+
+        echo "Généré : {$number} (facture #{$newId}, à partir de #{$id})\n";
+        $generated++;
+    } catch (\Throwable $e) {
+        echo "Échec pour la facture #{$id} : {$e->getMessage()}\n";
     }
-
-    $items = Invoice::items((int) $id);
-    $number = Invoice::nextNumber();
-
-    $newId = Invoice::create([
-        'invoice_number' => $number,
-        'quote_id' => $invoice['quote_id'],
-        'client_id' => $invoice['client_id'],
-        'event_id' => $invoice['event_id'],
-        'type' => $invoice['type'],
-        'status' => 'draft',
-        'issue_date' => date('Y-m-d'),
-        'due_date' => date('Y-m-d', strtotime('+30 days')),
-        'subtotal' => $invoice['subtotal'],
-        'tax_rate' => $invoice['tax_rate'],
-        'tax_amount' => $invoice['tax_amount'],
-        'total' => $invoice['total'],
-        'notes' => $invoice['notes'],
-        'is_recurring' => $invoice['is_recurring'],
-        'recurrence_interval' => $invoice['recurrence_interval'],
-        'recurrence_parent_id' => $invoice['id'],
-    ]);
-
-    Invoice::replaceItems($newId, $items);
-
-    if (!empty($invoice['recurrence_interval'])) {
-        Invoice::update((int) $id, ['recurrence_next_date' => date('Y-m-d', strtotime($map[$invoice['recurrence_interval']]))]);
-    }
-
-    echo "Généré : {$number} (facture #{$newId}, à partir de #{$id})\n";
-    $generated++;
 }
 
 echo "{$generated} facture(s) générée(s).\n";

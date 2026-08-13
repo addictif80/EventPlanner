@@ -73,6 +73,11 @@ abstract class Model
 
     public static function update(int $id, array $data): bool
     {
+        // A caller must never be able to reparent a row to another tenant by
+        // slipping organization_id into the update payload — the scope below
+        // is the only place that column is allowed to be set.
+        unset($data['organization_id']);
+
         $assignments = implode(', ', array_map(fn($c) => "{$c} = :{$c}", array_keys($data)));
         $sql = sprintf('UPDATE %s SET %s WHERE %s = :__id', static::$table, $assignments, static::$primaryKey);
 

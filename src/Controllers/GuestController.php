@@ -128,13 +128,14 @@ class GuestController
         // so we bypass the tenant-scoped Model::update() and target the row
         // directly — its identity was already established via the RSVP token.
         $stmt = Database::connection()->prepare(
-            'UPDATE guests SET rsvp_status = ?, plus_ones = ?, dietary_notes = ?, responded_at = NOW() WHERE id = ?'
+            'UPDATE guests SET rsvp_status = ?, plus_ones = ?, dietary_notes = ?, responded_at = NOW() WHERE id = ? AND organization_id = ?'
         );
         $stmt->execute([
             in_array(input('rsvp_status'), ['confirmed', 'declined'], true) ? input('rsvp_status') : 'pending',
             (int) input('plus_ones', 0),
             input('dietary_notes', ''),
             $guest['id'],
+            $guest['organization_id'],
         ]);
 
         View::render('guests/rsvp_thanks', [], layout: null);

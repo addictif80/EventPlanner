@@ -26,8 +26,8 @@ class Quote extends Model
         $sql = 'SELECT q.*, c.first_name, c.last_name, c.company_name, c.email AS client_email,
                        c.address, c.postal_code, c.city, c.country, e.title AS event_title
                 FROM quotes q
-                LEFT JOIN clients c ON c.id = q.client_id
-                LEFT JOIN events e ON e.id = q.event_id
+                LEFT JOIN clients c ON c.id = q.client_id AND c.organization_id = q.organization_id
+                LEFT JOIN events e ON e.id = q.event_id AND e.organization_id = q.organization_id
                 WHERE q.id = ? AND q.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute([$id, Auth::organizationId()]);

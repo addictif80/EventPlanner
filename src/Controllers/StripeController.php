@@ -110,8 +110,8 @@ class StripeController
             }
 
             if (($session['payment_status'] ?? '') === 'paid') {
-                $stmt = Database::connection()->prepare('SELECT id FROM payments WHERE reference = ?');
-                $stmt->execute([$sessionId]);
+                $stmt = Database::connection()->prepare('SELECT id FROM payments WHERE reference = ? AND organization_id = ?');
+                $stmt->execute([$sessionId, $invoiceRow['organization_id']]);
 
                 if (!$stmt->fetch()) {
                     $stmt = Database::connection()->prepare(

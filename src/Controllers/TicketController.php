@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
@@ -103,7 +104,8 @@ class TicketController
             $message = 'Ce billet a déjà été validé le ' . $ticket['checked_in_at'] . '.';
             $status = 'warning';
         } else {
-            Database::connection()->prepare('UPDATE tickets SET status = "checked_in", checked_in_at = NOW() WHERE id = ?')->execute([$ticket['id']]);
+            Database::connection()->prepare('UPDATE tickets SET status = "checked_in", checked_in_at = NOW() WHERE id = ? AND organization_id = ?')
+                ->execute([$ticket['id'], Auth::organizationId()]);
             $message = 'Accès validé pour ' . ($ticket['holder_name'] ?: $ticket['code']) . '.';
             $status = 'success';
         }

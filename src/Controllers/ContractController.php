@@ -42,6 +42,7 @@ class ContractController
     {
         Csrf::verifyOrFail();
         if (!Client::find((int) input('client_id'))) { http_response_code(404); die('Client introuvable.'); }
+        if (input('event_id') !== '' && !Event::find((int) input('event_id'))) { http_response_code(404); die('Événement introuvable.'); }
         $id = Contract::create([
             'client_id' => (int) input('client_id'),
             'event_id' => input('event_id') !== '' ? (int) input('event_id') : null,
@@ -129,9 +130,9 @@ class ContractController
         // and target the row directly — its identity was already established
         // via the signing token.
         $stmt = Database::connection()->prepare(
-            'UPDATE contracts SET status = "signed", signer_name = ?, signature_data = ?, signer_ip = ?, signed_at = NOW() WHERE id = ?'
+            'UPDATE contracts SET status = "signed", signer_name = ?, signature_data = ?, signer_ip = ?, signed_at = NOW() WHERE id = ? AND organization_id = ?'
         );
-        $stmt->execute([$signerName, $signatureData, $_SERVER['REMOTE_ADDR'] ?? '', $contract['id']]);
+        $stmt->execute([$signerName, $signatureData, $_SERVER['REMOTE_ADDR'] ?? '', $contract['id'], $contract['organization_id']]);
 
         View::render('contracts/sign_thanks', ['contract' => $contract], layout: null);
     }

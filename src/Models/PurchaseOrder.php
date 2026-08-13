@@ -23,8 +23,8 @@ class PurchaseOrder extends Model
     {
         $sql = 'SELECT po.*, p.name AS provider_name, p.email AS provider_email, e.title AS event_title
                 FROM purchase_orders po
-                LEFT JOIN providers p ON p.id = po.provider_id
-                LEFT JOIN events e ON e.id = po.event_id
+                LEFT JOIN providers p ON p.id = po.provider_id AND p.organization_id = po.organization_id
+                LEFT JOIN events e ON e.id = po.event_id AND e.organization_id = po.organization_id
                 WHERE po.id = ? AND po.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute([$id, Auth::organizationId()]);

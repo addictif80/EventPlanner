@@ -25,8 +25,8 @@ class Contract extends Model
     {
         $sql = 'SELECT c.*, cl.first_name, cl.last_name, cl.company_name, cl.email AS client_email, e.title AS event_title
                 FROM contracts c
-                LEFT JOIN clients cl ON cl.id = c.client_id
-                LEFT JOIN events e ON e.id = c.event_id
+                LEFT JOIN clients cl ON cl.id = c.client_id AND cl.organization_id = c.organization_id
+                LEFT JOIN events e ON e.id = c.event_id AND e.organization_id = c.organization_id
                 WHERE c.id = ? AND c.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute([$id, Auth::organizationId()]);

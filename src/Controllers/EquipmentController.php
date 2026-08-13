@@ -76,9 +76,14 @@ class EquipmentController
         $quantity = (int) input('quantity', 1);
 
         $equipment = Equipment::find($equipmentId);
+        if (!$equipment) {
+            http_response_code(404);
+            die('Matériel introuvable.');
+        }
+
         $alreadyBooked = Equipment::bookedQuantity($equipmentId, $eventDate);
 
-        if ($equipment && ($alreadyBooked + $quantity) > (int) $equipment['total_quantity']) {
+        if (($alreadyBooked + $quantity) > (int) $equipment['total_quantity']) {
             Session::flash('error', "Stock insuffisant : {$alreadyBooked}/{$equipment['total_quantity']} déjà réservé pour cette date.");
             redirect('/events/' . $eventId);
         }

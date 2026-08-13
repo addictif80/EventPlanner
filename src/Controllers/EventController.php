@@ -39,6 +39,7 @@ class EventController
     {
         Csrf::verifyOrFail();
         $data = self::validated();
+        self::assertOwnership($data);
         $data['created_by'] = \App\Core\Auth::id();
         $id = Event::create($data);
         ActivityLog::record('Création événement', 'event', $id, $data['title']);
@@ -112,7 +113,9 @@ class EventController
     public static function update(string $id): void
     {
         Csrf::verifyOrFail();
-        Event::update((int) $id, self::validated());
+        $data = self::validated();
+        self::assertOwnership($data);
+        Event::update((int) $id, $data);
         ActivityLog::record('Modification événement', 'event', (int) $id);
         Session::flash('success', 'Événement mis à jour.');
         redirect('/events/' . $id);
@@ -158,6 +161,22 @@ class EventController
         $stmt->execute([(int) $providerLinkId, (int) $id, Auth::organizationId()]);
         Session::flash('success', 'Prestataire retiré de l\'événement.');
         redirect('/events/' . $id);
+    }
+
+    private static function assertOwnership(array $data): void
+    {
+        if (!Client::find($data['client_id'])) {
+            http_response_code(404);
+            die('Client introuvable.');
+        }
+        if ($data['event_type_id'] !== null && !EventType::find($data['event_type_id'])) {
+            http_response_code(404);
+            die("Type d'événement introuvable.");
+        }
+        if ($data['venue_id'] !== null && !Venue::find($data['venue_id'])) {
+            http_response_code(404);
+            die('Lieu introuvable.');
+        }
     }
 
     private static function validated(): array

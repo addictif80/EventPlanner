@@ -28,6 +28,16 @@ class PurchaseOrderController
     public static function store(): void
     {
         Csrf::verifyOrFail();
+
+        if (!Provider::find((int) input('provider_id'))) {
+            http_response_code(404);
+            die('Prestataire introuvable.');
+        }
+        if (input('event_id') !== '' && !Event::find((int) input('event_id'))) {
+            http_response_code(404);
+            die('Événement introuvable.');
+        }
+
         [$items, $total] = self::parseItems();
 
         $id = PurchaseOrder::create([

@@ -6,7 +6,9 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
+use App\Models\Client;
 use App\Models\Document;
+use App\Models\Event;
 
 class DocumentController
 {
@@ -19,6 +21,11 @@ class DocumentController
         $clientId = input('client_id') !== '' ? (int) input('client_id') : null;
         $eventId = input('event_id') !== '' ? (int) input('event_id') : null;
         $redirectTo = $eventId ? '/events/' . $eventId : ($clientId ? '/clients/' . $clientId : '/');
+
+        if (($clientId && !Client::find($clientId)) || ($eventId && !Event::find($eventId))) {
+            http_response_code(404);
+            die('Client ou événement introuvable.');
+        }
 
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             Session::flash('error', 'Aucun fichier valide reçu.');

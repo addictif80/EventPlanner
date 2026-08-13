@@ -40,6 +40,7 @@ class QuoteController
     public static function store(): void
     {
         Csrf::verifyOrFail();
+        self::assertOwnership((int) input('client_id'), input('event_id'));
         [$items, $subtotal, $taxRate, $taxAmount, $total] = self::parseItems();
 
         $id = Quote::create([
@@ -95,6 +96,7 @@ class QuoteController
     public static function update(string $id): void
     {
         Csrf::verifyOrFail();
+        self::assertOwnership((int) input('client_id'), input('event_id'));
         [$items, $subtotal, $taxRate, $taxAmount, $total] = self::parseItems();
 
         Quote::update((int) $id, [
@@ -221,6 +223,18 @@ class QuoteController
 
         Session::flash('success', 'Facture ' . $number . ' générée à partir du devis.');
         redirect('/invoices/' . $invoiceId);
+    }
+
+    private static function assertOwnership(int $clientId, $eventId): void
+    {
+        if (!Client::find($clientId)) {
+            http_response_code(404);
+            die('Client introuvable.');
+        }
+        if ($eventId !== '' && !Event::find((int) $eventId)) {
+            http_response_code(404);
+            die('Événement introuvable.');
+        }
     }
 
     private static function parseItems(): array

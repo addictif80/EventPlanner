@@ -28,9 +28,9 @@ class Event extends Model
         $sql = 'SELECT e.*, c.first_name, c.last_name, c.company_name, c.type AS client_type,
                        et.name AS type_name, v.name AS venue_name
                 FROM events e
-                LEFT JOIN clients c ON c.id = e.client_id
-                LEFT JOIN event_types et ON et.id = e.event_type_id
-                LEFT JOIN venues v ON v.id = e.venue_id
+                LEFT JOIN clients c ON c.id = e.client_id AND c.organization_id = e.organization_id
+                LEFT JOIN event_types et ON et.id = e.event_type_id AND et.organization_id = e.organization_id
+                LEFT JOIN venues v ON v.id = e.venue_id AND v.organization_id = e.organization_id
                 WHERE e.id = ? AND e.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute([$id, Auth::organizationId()]);
