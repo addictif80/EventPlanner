@@ -1,0 +1,10 @@
+body { background: #f5f6fa; }
+.sidebar .nav-link { border-radius: 6px; }
+.sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,.15); }
+.card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.table thead th { text-transform: uppercase; font-size: .75rem; color: #6c757d; border-top: none; }
+.badge-status { font-size: .75rem; }
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}

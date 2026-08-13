@@ -1,0 +1,130 @@
+<?php use App\Core\View; ?>
+<?php
+$statusLabels = ['draft' => 'Brouillon', 'confirmed' => 'Confirmé', 'in_progress' => 'En cours', 'completed' => 'Terminé', 'cancelled' => 'Annulé'];
+$statusColors = ['draft' => 'secondary', 'confirmed' => 'primary', 'in_progress' => 'warning', 'completed' => 'success', 'cancelled' => 'danger'];
+$clientName = $event['company_name'] ?: trim($event['first_name'] . ' ' . $event['last_name']);
+?>
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h2 class="h4 mb-1"><?= View::e($event['title']) ?></h2>
+    <span class="badge bg-<?= $statusColors[$event['status']] ?>"><?= $statusLabels[$event['status']] ?></span>
+    <span class="text-muted ms-2"><?= View::date($event['event_date']) ?><?= $event['end_date'] ? ' → ' . View::date($event['end_date']) : '' ?></span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="<?= url('/quotes/create') ?>?event_id=<?= $event['id'] ?>&client_id=<?= $event['client_id'] ?>" class="btn btn-outline-primary btn-sm">+ Devis</a>
+    <a href="<?= url('/events/' . $event['id'] . '/edit') ?>" class="btn btn-outline-secondary btn-sm">Modifier</a>
+    <form method="post" action="<?= url('/events/' . $event['id'] . '/delete') ?>" onsubmit="return confirm('Supprimer cet événement ?');">
+      <?= csrf_field() ?>
+      <button class="btn btn-outline-danger btn-sm">Supprimer</button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card h-100"><div class="card-body">
+      <h3 class="h6">Informations</h3>
+      <p class="mb-1"><strong>Client :</strong> <a href="<?= url('/clients/' . $event['client_id']) ?>"><?= View::e($clientName) ?></a></p>
+      <p class="mb-1"><strong>Type :</strong> <?= View::e($event['type_name']) ?: '—' ?></p>
+      <p class="mb-1"><strong>Lieu :</strong> <?= View::e($event['venue_name'] ?: $event['location']) ?: '—' ?></p>
+      <p class="mb-1"><strong>Invités :</strong> <?= $event['guests_count'] ?? '—' ?></p>
+      <p class="mb-0"><strong>Budget :</strong> <?= $event['budget'] !== null ? View::money((float)$event['budget']) : '—' ?></p>
+    </div></div>
+  </div>
+  <div class="col-md-8">
+    <div class="card h-100"><div class="card-body">
+      <h3 class="h6">Description</h3>
+      <p class="mb-0 text-muted"><?= nl2br(View::e($event['description'])) ?: '—' ?></p>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Checklist / Tâches</h3>
+      <form method="post" action="<?= url('/events/' . $event['id'] . '/tasks') ?>" class="d-flex gap-2 mb-3">
+        <?= csrf_field() ?>
+        <input type="text" name="title" class="form-control form-control-sm" placeholder="Nouvelle tâche..." required>
+        <input type="date" name="due_date" class="form-control form-control-sm" style="max-width:150px;">
+        <select name="assigned_to" class="form-select form-select-sm" style="max-width:150px;">
+          <option value="">Assigner...</option>
+          <?php foreach ($users as $u): ?><option value="<?= $u['id'] ?>"><?= View::e($u['name']) ?></option><?php endforeach; ?>
+        </select>
+        <button class="btn btn-sm btn-primary">+</button>
+      </form>
+      <ul class="list-group list-group-flush">
+        <?php foreach ($tasks as $t): ?>
+        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+          <div>
+            <form method="post" action="<?= url('/tasks/' . $t['id'] . '/status') ?>" class="d-inline">
+              <?= csrf_field() ?>
+              <input type="hidden" name="status" value="<?= $t['status'] === 'done' ? 'todo' : 'done' ?>">
+              <button class="btn btn-sm btn-link p-0 me-2" title="Basculer le statut">
+                <i class="bi <?= $t['status'] === 'done' ? 'bi-check-square-fill text-success' : 'bi-square' ?>"></i>
+              </button>
+            </form>
+            <span class="<?= $t['status'] === 'done' ? 'text-decoration-line-through text-muted' : '' ?>"><?= View::e($t['title']) ?></span>
+            <?php if ($t['due_date']): ?><span class="text-muted small ms-1">(<?= View::date($t['due_date']) ?>)</span><?php endif; ?>
+          </div>
+          <form method="post" action="<?= url('/tasks/' . $t['id'] . '/delete') ?>">
+            <?= csrf_field() ?>
+            <button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button>
+          </form>
+        </li>
+        <?php endforeach; ?>
+        <?php if (empty($tasks)): ?><li class="list-group-item px-0 text-muted small">Aucune tâche.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Prestataires</h3>
+      <form method="post" action="<?= url('/events/' . $event['id'] . '/providers') ?>" class="d-flex gap-2 mb-3">
+        <?= csrf_field() ?>
+        <select name="provider_id" class="form-select form-select-sm" required>
+          <option value="">Ajouter un prestataire...</option>
+          <?php foreach ($providers as $p): ?><option value="<?= $p['id'] ?>"><?= View::e($p['name']) ?> (<?= View::e($p['category']) ?>)</option><?php endforeach; ?>
+        </select>
+        <input type="text" name="cost" class="form-control form-control-sm" placeholder="Coût" style="max-width:100px;">
+        <button class="btn btn-sm btn-primary">+</button>
+      </form>
+      <ul class="list-group list-group-flush">
+        <?php foreach ($eventProviders as $ep): ?>
+        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+          <span><?= View::e($ep['provider_name']) ?> <span class="text-muted small">(<?= View::e($ep['category']) ?>)</span><?php if ($ep['cost']): ?> — <?= View::money((float)$ep['cost']) ?><?php endif; ?></span>
+          <form method="post" action="<?= url('/events/' . $event['id'] . '/providers/' . $ep['id'] . '/delete') ?>">
+            <?= csrf_field() ?>
+            <button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button>
+          </form>
+        </li>
+        <?php endforeach; ?>
+        <?php if (empty($eventProviders)): ?><li class="list-group-item px-0 text-muted small">Aucun prestataire lié.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Devis</h3>
+      <ul class="list-unstyled mb-0">
+        <?php foreach ($quotes as $q): ?>
+          <li class="py-1 border-bottom"><a href="<?= url('/quotes/' . $q['id']) ?>"><?= View::e($q['quote_number']) ?></a> — <?= View::money((float)$q['total']) ?> <span class="badge bg-light text-dark"><?= View::e($q['status']) ?></span></li>
+        <?php endforeach; ?>
+        <?php if (empty($quotes)): ?><li class="text-muted small">Aucun devis.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Factures</h3>
+      <ul class="list-unstyled mb-0">
+        <?php foreach ($invoices as $inv): ?>
+          <li class="py-1 border-bottom"><a href="<?= url('/invoices/' . $inv['id']) ?>"><?= View::e($inv['invoice_number']) ?></a> — <?= View::money((float)$inv['total']) ?> <span class="badge bg-light text-dark"><?= View::e($inv['status']) ?></span></li>
+        <?php endforeach; ?>
+        <?php if (empty($invoices)): ?><li class="text-muted small">Aucune facture.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+</div>

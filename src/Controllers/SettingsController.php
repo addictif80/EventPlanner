@@ -1,0 +1,120 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Core\Auth;
+use App\Core\Csrf;
+use App\Core\Database;
+use App\Core\Mailer;
+use App\Core\Session;
+use App\Core\View;
+use App\Models\CompanySettings;
+
+class SettingsController
+{
+    public static function index(): void
+    {
+        Auth::requireAdmin();
+
+        $stmt = Database::connection()->query('SELECT * FROM smtp_settings WHERE id = 1');
+        $smtp = $stmt->fetch() ?: [];
+
+        View::render('settings/index', [
+            'title' => 'Paramètres',
+            'company' => CompanySettings::get(),
+            'smtp' => $smtp,
+        ]);
+    }
+
+    public static function updateCompany(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        CompanySettings::update([
+            'company_name' => input('company_name', ''),
+            'legal_form' => input('legal_form', ''),
+            'address' => input('address', ''),
+            'postal_code' => input('postal_code', ''),
+            'city' => input('city', ''),
+            'country' => input('country', ''),
+            'phone' => input('phone', ''),
+            'email' => input('email', ''),
+            'website' => input('website', ''),
+            'siret' => input('siret', ''),
+            'vat_number' => input('vat_number', ''),
+            'default_tax_rate' => (float) str_replace(',', '.', input('default_tax_rate', '20')),
+            'currency' => input('currency', 'EUR'),
+            'quote_prefix' => input('quote_prefix', 'DEV-'),
+            'invoice_prefix' => input('invoice_prefix', 'FAC-'),
+            'invoice_footer' => input('invoice_footer', ''),
+        ]);
+
+        Session::flash('success', 'Informations de l\'entreprise mises à jour.');
+        redirect('/settings');
+    }
+
+    public static function updateSmtp(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        $password = input('password', '');
+
+        $pdo = Database::connection();
+        if ($password === '') {
+            // Keep the previously stored password if the field is left blank.
+            $stmt = $pdo->prepare(
+                'UPDATE smtp_settings SET host = ?, port = ?, encryption = ?, username = ?, from_email = ?, from_name = ?, is_configured = 1 WHERE id = 1'
+            );
+            $stmt->execute([
+                input('host', ''),
+                (int) input('port', 587),
+                input('encryption', 'tls'),
+                input('username', ''),
+                input('from_email', ''),
+                input('from_name', ''),
+            ]);
+        } else {
+            $stmt = $pdo->prepare(
+                'UPDATE smtp_settings SET host = ?, port = ?, encryption = ?, username = ?, password = ?, from_email = ?, from_name = ?, is_configured = 1 WHERE id = 1'
+            );
+            $stmt->execute([
+                input('host', ''),
+                (int) input('port', 587),
+                input('encryption', 'tls'),
+                input('username', ''),
+                $password,
+                input('from_email', ''),
+                input('from_name', ''),
+            ]);
+        }
+
+        Session::flash('success', 'Configuration SMTP enregistrée.');
+        redirect('/settings');
+    }
+
+    public static function testSmtp(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        $recipient = input('test_email', '');
+        if ($recipient === '') {
+            $recipient = Auth::user()['email'] ?? '';
+        }
+
+        try {
+            Mailer::send(
+                $recipient,
+                'Test de configuration SMTP — EventPlanner',
+                '<p>Ceci est un email de test envoyé depuis votre panel EventPlanner.</p><p>Si vous recevez ce message, votre configuration SMTP fonctionne correctement.</p>'
+            );
+            Session::flash('success', 'Email de test envoyé avec succès à ' . $recipient . '.');
+        } catch (\RuntimeException $e) {
+            Session::flash('error', "Échec de l'envoi du test : " . $e->getMessage());
+        }
+
+        redirect('/settings');
+    }
+}
