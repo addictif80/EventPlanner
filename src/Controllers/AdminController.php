@@ -9,6 +9,8 @@ use App\Core\Database;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Organization;
+use App\Models\OrganizationSubscription;
+use App\Models\Plan;
 
 /**
  * Platform-level administration, entirely separate from an organization's own
@@ -73,7 +75,31 @@ class AdminController
             'title' => $organization['name'],
             'organization' => $organization,
             'users' => $stmt->fetchAll(),
+            'subscription' => OrganizationSubscription::forOrganization((int) $id),
+            'plans' => Plan::allOrdered(),
         ]);
+    }
+
+    /** Manually assigns a plan without going through Stripe — for legacy/free/promotional accounts. */
+    public static function assignPlan(string $id): void
+    {
+        Auth::requireSuperAdmin();
+        Csrf::verifyOrFail();
+
+        $organization = Organization::find((int) $id);
+        if (!$organization) { http_response_code(404); die('Organisation introuvable.'); }
+
+        $planId = input('plan_id') !== '' ? (int) input('plan_id') : null;
+        if ($planId && !Plan::find($planId)) {
+            Session::flash('error', 'Offre invalide.');
+            redirect('/admin/organizations/' . $id);
+        }
+
+        OrganizationSubscription::upsertForOrganization((int) $id, ['plan_id' => $planId, 'status' => 'active']);
+        AdminActivityLog::record('plan_assigned', 'organization', (int) $id, $planId ? 'plan_id=' . $planId : 'aucune offre');
+
+        Session::flash('success', 'Offre assignée manuellement.');
+        redirect('/admin/organizations/' . $id);
     }
 
     public static function toggleOrganizationStatus(string $id): void

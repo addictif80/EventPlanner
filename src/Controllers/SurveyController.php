@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\ModuleAccess;
 use App\Core\Database;
 use App\Core\Mailer;
 use App\Core\Session;
@@ -14,6 +15,7 @@ class SurveyController
 {
     public static function send(string $eventId): void
     {
+        ModuleAccess::requireModule('satisfaction_survey');
         Csrf::verifyOrFail();
         $event = Event::find((int) $eventId);
         if (!$event) { http_response_code(404); die('Événement introuvable.'); }

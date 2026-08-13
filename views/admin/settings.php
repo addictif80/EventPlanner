@@ -33,3 +33,24 @@
     </form>
   </div>
 </div>
+
+<div class="card mt-4">
+  <div class="card-body">
+    <h3 class="h6">Facturation des abonnements (Stripe)</h3>
+    <p class="text-muted small">Compte Stripe de la <strong>plateforme</strong>, utilisé pour prélever les organisations sur leurs offres/modules payants. Distinct du compte Stripe que chaque organisation peut renseigner elle-même pour encaisser ses propres factures clients.</p>
+    <form method="post" action="<?= url('/admin/settings/billing') ?>">
+      <?= csrf_field() ?>
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">Clé secrète Stripe</label><input type="password" name="stripe_secret_key" class="form-control" placeholder="<?= !empty($settings['stripe_secret_key']) ? '•••••••• (laisser vide pour ne pas changer)' : 'sk_live_...' ?>"></div>
+        <div class="col-md-6"><label class="form-label">Clé publiable Stripe</label><input type="text" name="stripe_publishable_key" class="form-control" value="<?= View::e($settings['stripe_publishable_key'] ?? '') ?>" placeholder="pk_live_..."></div>
+        <div class="col-md-12"><label class="form-label">Secret du webhook</label><input type="text" name="stripe_webhook_secret" class="form-control" value="<?= View::e($settings['stripe_webhook_secret'] ?? '') ?>" placeholder="whsec_..."></div>
+      </div>
+      <p class="text-muted small mt-2 mb-0">
+        URL du webhook à renseigner côté Stripe (Développeurs &gt; Webhooks) :
+        événements <code>checkout.session.completed</code>, <code>customer.subscription.updated</code>,
+        <code>customer.subscription.deleted</code>, <code>invoice.payment_failed</code>.
+      </p>
+      <button class="btn btn-primary mt-3">Enregistrer</button>
+    </form>
+  </div>
+</div>

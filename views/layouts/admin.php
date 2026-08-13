@@ -27,6 +27,7 @@ $flashes = flashes();
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/users') ?>"><i class="bi bi-people me-2"></i>Utilisateurs</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/documents') ?>"><i class="bi bi-file-earmark-text me-2"></i>Documents</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/tickets') ?>"><i class="bi bi-life-preserver me-2"></i>Tickets support</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/offers') ?>"><i class="bi bi-tags me-2"></i>Offres</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/blocklist') ?>"><i class="bi bi-slash-circle me-2"></i>Blocage IP / email</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/settings') ?>"><i class="bi bi-gear me-2"></i>Paramètres système</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/activity-log') ?>"><i class="bi bi-journal-text me-2"></i>Journal d'activité</a></li>

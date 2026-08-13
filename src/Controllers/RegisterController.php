@@ -96,6 +96,17 @@ class RegisterController
 
             EmailTemplate::createDefaults($organizationId);
 
+            // Guarded: the plans/organization_subscriptions tables only exist
+            // once migration 005_billing.sql has been applied — older installs
+            // that haven't migrated yet must still allow self-registration.
+            if ($pdo->query("SHOW TABLES LIKE 'plans'")->fetch()) {
+                $defaultPlanId = $pdo->query('SELECT id FROM plans WHERE is_default_signup = 1 ORDER BY id LIMIT 1')->fetchColumn();
+                if ($defaultPlanId) {
+                    $pdo->prepare('INSERT INTO organization_subscriptions (organization_id, plan_id, status) VALUES (?, ?, "active")')
+                        ->execute([$organizationId, $defaultPlanId]);
+                }
+            }
+
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();

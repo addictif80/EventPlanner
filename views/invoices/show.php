@@ -100,7 +100,7 @@ $remaining = (float)$invoice['total'] - (float)$invoice['amount_paid'];
     </tbody>
   </table>
 
-  <?php if (!empty($stripeEnabled)): ?>
+  <?php if (!empty($stripeEnabled) && \App\Core\ModuleAccess::has('stripe_payments')): ?>
   <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/stripe-link') ?>" class="mt-2">
     <?= csrf_field() ?>
     <button class="btn btn-sm btn-outline-primary"><i class="bi bi-credit-card"></i> Générer un lien de paiement en ligne (Stripe)</button>

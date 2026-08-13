@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\ModuleAccess;
 use App\Core\Database;
 use App\Core\Mailer;
 use App\Core\Session;
@@ -16,6 +17,7 @@ class GuestController
 {
     public static function index(string $eventId): void
     {
+        ModuleAccess::requireModule('guests');
         $event = Event::find((int) $eventId);
         if (!$event) { http_response_code(404); die('Événement introuvable.'); }
 
@@ -29,6 +31,7 @@ class GuestController
 
     public static function store(string $eventId): void
     {
+        ModuleAccess::requireModule('guests');
         Csrf::verifyOrFail();
         if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
         Guest::create([
@@ -47,6 +50,7 @@ class GuestController
 
     public static function update(string $id): void
     {
+        ModuleAccess::requireModule('guests');
         Csrf::verifyOrFail();
         $stmt = Database::connection()->prepare('SELECT event_id FROM guests WHERE id = ? AND organization_id = ?');
         $stmt->execute([$id, Auth::organizationId()]);
@@ -69,6 +73,7 @@ class GuestController
 
     public static function destroy(string $id): void
     {
+        ModuleAccess::requireModule('guests');
         Csrf::verifyOrFail();
         $stmt = Database::connection()->prepare('SELECT event_id FROM guests WHERE id = ? AND organization_id = ?');
         $stmt->execute([$id, Auth::organizationId()]);
@@ -81,6 +86,7 @@ class GuestController
 
     public static function sendInvite(string $id): void
     {
+        ModuleAccess::requireModule('guests');
         Csrf::verifyOrFail();
         $stmt = Database::connection()->prepare('SELECT * FROM guests WHERE id = ? AND organization_id = ?');
         $stmt->execute([$id, Auth::organizationId()]);
@@ -143,6 +149,7 @@ class GuestController
 
     public static function storeTable(string $eventId): void
     {
+        ModuleAccess::requireModule('guests');
         Csrf::verifyOrFail();
         if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
         EventTable::create([
@@ -157,6 +164,7 @@ class GuestController
 
     public static function destroyTable(string $eventId, string $tableId): void
     {
+        ModuleAccess::requireModule('guests');
         Csrf::verifyOrFail();
         EventTable::delete((int) $tableId);
         Session::flash('success', 'Table supprimée.');

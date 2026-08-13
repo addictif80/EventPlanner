@@ -14,6 +14,32 @@
   </form>
 </div>
 
+<div class="card mb-3">
+  <div class="card-header">Abonnement</div>
+  <div class="card-body">
+    <?php if ($subscription): ?>
+      <p class="mb-2">
+        Offre actuelle : <strong><?= View::e($subscription['plan_name'] ?? 'Aucune') ?></strong>
+        &middot; Statut : <span class="badge bg-secondary"><?= View::e($subscription['status']) ?></span>
+        <?php if ($subscription['stripe_subscription_id']): ?> &middot; <span class="text-muted small">Facturé via Stripe</span><?php endif; ?>
+      </p>
+    <?php else: ?>
+      <p class="text-muted mb-2">Aucun abonnement enregistré pour cette organisation.</p>
+    <?php endif; ?>
+    <form method="post" action="<?= url('/admin/organizations/' . $organization['id'] . '/assign-plan') ?>" class="d-flex gap-2">
+      <?= csrf_field() ?>
+      <select name="plan_id" class="form-select" style="max-width:280px;">
+        <option value="">— Aucune offre —</option>
+        <?php foreach ($plans as $p): ?>
+          <option value="<?= $p['id'] ?>" <?= ($subscription['plan_id'] ?? null) == $p['id'] ? 'selected' : '' ?>><?= View::e($p['name']) ?> (<?= View::money((float) $p['monthly_price']) ?>)</option>
+        <?php endforeach; ?>
+      </select>
+      <button class="btn btn-outline-dark">Assigner manuellement</button>
+    </form>
+    <p class="text-muted small mt-2 mb-0">L'assignation manuelle n'utilise pas Stripe (pas de prélèvement) : utile pour les comptes historiques, gratuits ou promotionnels.</p>
+  </div>
+</div>
+
 <div class="card">
   <div class="card-header">Utilisateurs de cette organisation</div>
   <div class="table-responsive">

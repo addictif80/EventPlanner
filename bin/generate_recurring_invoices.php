@@ -9,6 +9,7 @@
 require dirname(__DIR__) . '/src/autoload.php';
 
 use App\Core\Database;
+use App\Core\ModuleAccess;
 use App\Models\Invoice;
 
 if (PHP_SAPI !== 'cli') {
@@ -31,6 +32,10 @@ foreach ($rows as $row) {
     // so each iteration manually sets the tenant scope that Auth::organizationId()
     // (and therefore every scoped Model:: call below) reads from.
     $_SESSION['organization_id'] = (int) $row['organization_id'];
+
+    if (!ModuleAccess::has('recurring_invoices', (int) $row['organization_id'])) {
+        continue;
+    }
 
     try {
         $invoice = Invoice::find($id);

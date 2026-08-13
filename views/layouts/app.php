@@ -1,5 +1,6 @@
 <?php
 use App\Core\Auth;
+use App\Core\ModuleAccess;
 use App\Core\View;
 $user = Auth::user();
 $flashes = flashes();
@@ -27,19 +28,28 @@ $flashes = flashes();
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/events') ?>"><i class="bi bi-calendar3 me-2"></i>Événements</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/quotes') ?>"><i class="bi bi-file-earmark-text me-2"></i>Devis</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/invoices') ?>"><i class="bi bi-receipt me-2"></i>Factures</a></li>
+      <?php if (ModuleAccess::has('contracts')): ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/contracts') ?>"><i class="bi bi-file-earmark-text me-2"></i>Contrats</a></li>
+      <?php endif; ?>
+      <?php if (ModuleAccess::has('reports')): ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/reports') ?>"><i class="bi bi-graph-up me-2"></i>Rapports</a></li>
+      <?php endif; ?>
       <li class="nav-item mt-2"><span class="text-uppercase small text-white-50 px-2">Ressources</span></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/providers') ?>"><i class="bi bi-truck me-2"></i>Prestataires</a></li>
+      <?php if (ModuleAccess::has('purchase_orders')): ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/purchase-orders') ?>"><i class="bi bi-cart-check me-2"></i>Bons de commande</a></li>
+      <?php endif; ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/venues') ?>"><i class="bi bi-geo-alt me-2"></i>Lieux</a></li>
+      <?php if (ModuleAccess::has('equipment')): ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/equipment') ?>"><i class="bi bi-boxes me-2"></i>Matériel</a></li>
+      <?php endif; ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/products') ?>"><i class="bi bi-box-seam me-2"></i>Catalogue</a></li>
       <li class="nav-item mt-3"><span class="text-uppercase small text-white-50 px-2">Administration</span></li>
       <?php if ($user && $user['role'] === 'admin'): ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/users') ?>"><i class="bi bi-person-badge me-2"></i>Utilisateurs</a></li>
       <?php endif; ?>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/settings') ?>"><i class="bi bi-gear me-2"></i>Paramètres</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/subscription') ?>"><i class="bi bi-credit-card me-2"></i>Abonnement</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/support') ?>"><i class="bi bi-life-preserver me-2"></i>Support</a></li>
       <?php if (Auth::isSuperAdmin()): ?>
       <li class="nav-item mt-3"><span class="text-uppercase small text-white-50 px-2">Plateforme</span></li>

@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Csrf;
+use App\Core\ModuleAccess;
 use App\Core\Database;
 use App\Core\Mailer;
 use App\Core\Session;
@@ -16,11 +17,13 @@ class ContractController
 {
     public static function index(): void
     {
+        ModuleAccess::requireModule('contracts');
         View::render('contracts/index', ['title' => 'Contrats', 'contracts' => Contract::allWithClient()]);
     }
 
     public static function create(): void
     {
+        ModuleAccess::requireModule('contracts');
         $company = CompanySettings::get();
         $defaultContent = "Entre les soussignés,\n\n"
             . ($company['company_name'] ?: '[Votre entreprise]') . ", ci-après « le Prestataire »,\n\n"
@@ -40,6 +43,7 @@ class ContractController
 
     public static function store(): void
     {
+        ModuleAccess::requireModule('contracts');
         Csrf::verifyOrFail();
         if (!Client::find((int) input('client_id'))) { http_response_code(404); die('Client introuvable.'); }
         if (input('event_id') !== '' && !Event::find((int) input('event_id'))) { http_response_code(404); die('Événement introuvable.'); }
@@ -56,6 +60,7 @@ class ContractController
 
     public static function show(string $id): void
     {
+        ModuleAccess::requireModule('contracts');
         $contract = Contract::findWithRelations((int) $id);
         if (!$contract) { http_response_code(404); die('Contrat introuvable.'); }
 
@@ -68,6 +73,7 @@ class ContractController
 
     public static function send(string $id): void
     {
+        ModuleAccess::requireModule('contracts');
         Csrf::verifyOrFail();
         $contract = Contract::findWithRelations((int) $id);
         if (!$contract) { http_response_code(404); die('Contrat introuvable.'); }
@@ -96,6 +102,7 @@ class ContractController
 
     public static function destroy(string $id): void
     {
+        ModuleAccess::requireModule('contracts');
         Csrf::verifyOrFail();
         Contract::delete((int) $id);
         Session::flash('success', 'Contrat supprimé.');

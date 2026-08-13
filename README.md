@@ -16,7 +16,9 @@ direct à une URL (voir « Isolation multi-tenant » plus bas). Au-dessus des
 organisations, un rôle **super administrateur** donne accès à un panel de
 gestion de la plateforme (organisations, utilisateurs, impersonation,
 documents, tickets de support, blocage IP/email, SMTP système — voir
-« Administration plateforme » plus bas).
+« Administration plateforme » plus bas), y compris la définition des
+**offres d'abonnement payantes** facturées automatiquement via Stripe
+Subscriptions (voir « Abonnements payants » plus bas).
 
 Stack : PHP 8.1+ / MySQL (MariaDB) / Bootstrap 5 / Chart.js (CDN). Aucune
 dépendance Composer requise (autoloader, client SMTP et intégration Stripe
@@ -139,6 +141,7 @@ manquantes, dans l'ordre :
 mysql -u <db_user> -p <db_name> < database/migrations/002_advanced_features.sql
 mysql -u <db_user> -p <db_name> < database/migrations/003_multi_tenant.sql
 mysql -u <db_user> -p <db_name> < database/migrations/004_platform_admin.sql
+mysql -u <db_user> -p <db_name> < database/migrations/005_billing.sql
 ```
 
 La migration `003` (passage au multi-tenant) regroupe toutes vos données
@@ -304,3 +307,80 @@ php bin/create_admin.php "Mon agence" "Votre Nom" vous@example.com VotreMotDePas
 # 2. Promouvez ce compte en super administrateur de la plateforme :
 php bin/make_super_admin.php vous@example.com
 ```
+
+## Abonnements payants
+
+Le super admin définit des **offres** (plans), des **modules** à l'unité et
+des **packages de modules**, facturés automatiquement chaque mois via
+**Stripe Subscriptions** — sur le compte Stripe de la **plateforme**
+(`system_settings.stripe_*`), entièrement distinct du compte Stripe que
+chaque organisation peut renseigner elle-même pour encaisser ses propres
+factures clients (`company_settings.stripe_secret_key`, voir plus haut).
+
+### Modèle
+
+- **Offres (plans)** : nom, prix mensuel, nombre de membres maximum
+  (illimité si vide), liste de modules inclus. Une offre peut être marquée
+  « par défaut à l'inscription » (offre gratuite `Découverte` fournie par
+  défaut : fonctionnalités de base, 3 membres, aucun module).
+- **Modules** : fonctionnalités avancées vendables à l'unité en supplément
+  d'une offre — `contracts` (contrats + signature), `purchase_orders` (bons
+  de commande), `equipment` (stock matériel), `ticketing` (billetterie +
+  check-in), `guests` (invités/RSVP/plans de table), `reports` (rapports
+  avancés), `client_portal` (portail client), `stripe_payments` (paiement en
+  ligne sur les factures), `recurring_invoices` (factures récurrentes),
+  `satisfaction_survey` (sondages), `calendar_ics` (flux calendrier). Les
+  fonctionnalités de base (clients, événements, devis, factures, paramètres,
+  utilisateurs) ne sont **jamais** verrouillées, quelle que soit l'offre.
+- **Packages de modules** : bundle de plusieurs modules vendu à un prix
+  global, généralement inférieur à la somme des modules pris séparément.
+
+Tout se gère dans **Administration plateforme > Offres**
+(`/admin/offers`) : création/modification des plans, modules et packages,
+avec synchronisation automatique des `Product`/`Price` Stripe correspondants
+(`App\Core\StripeBilling::syncPrice()` — un changement de prix crée un
+nouveau `Price` Stripe, l'ancien étant conservé archivé pour les abonnés déjà
+engagés dessus, les prix Stripe étant immuables).
+
+### Souscription et paiement
+
+Chaque organisation gère son abonnement depuis **Paramètres > Abonnement**
+(`/subscription`) :
+
+1. **Première souscription** (offre payante et/ou modules payants) : un
+   Checkout Stripe (`mode=subscription`) est créé avec toutes les lignes
+   choisies (offre + modules + packages) ; la carte est enregistrée sur ce
+   premier paiement.
+2. **Modifications ultérieures** (changer d'offre, ajouter/retirer un
+   module) : utilisent directement l'API Stripe Subscription Items sur
+   l'abonnement existant (pas de nouveau Checkout), le moyen de paiement
+   étant déjà enregistré — proratisation gérée automatiquement par Stripe.
+3. **Sélection entièrement gratuite** (offre `Découverte` sans module
+   payant) : aucun appel Stripe, l'abonnement est activé localement.
+
+Le nombre d'utilisateurs d'une organisation est bloqué à `max_members` de son
+offre (`ModuleAccess::memberLimitReached()`), et l'accès à chaque module
+verrouillé passe par `ModuleAccess::requireModule('...')` côté contrôleur
+(403 si non souscrit) + masquage des liens de menu correspondants.
+
+Le super admin peut aussi **assigner une offre manuellement** depuis la fiche
+d'une organisation (`/admin/organizations/{id}`), sans passer par Stripe —
+utile pour les comptes historiques, gratuits ou promotionnels (c'est
+d'ailleurs ce que fait automatiquement la migration `005_billing.sql` pour
+les organisations existant avant l'introduction des abonnements : elles sont
+basculées sur une offre « Historique (legacy) » gratuite avec tous les
+modules inclus, pour ne rien casser rétroactivement).
+
+### Configuration Stripe côté plateforme
+
+Dans **Administration plateforme > Paramètres système** (`/admin/settings`),
+renseignez :
+
+- **Clé secrète** et **clé publiable** Stripe de votre compte plateforme.
+- **Secret du webhook** : créez un endpoint Stripe (Développeurs > Webhooks)
+  pointant vers `https://votre-domaine.tld/subscription/webhook`, écoutant
+  les événements `checkout.session.completed`,
+  `customer.subscription.updated`, `customer.subscription.deleted` et
+  `invoice.payment_failed` ; copiez le secret de signature (`whsec_...`)
+  dans ce champ. La vérification de signature est implémentée nativement
+  (`StripeBilling::verifyWebhookSignature()`, HMAC SHA-256), sans SDK Stripe.

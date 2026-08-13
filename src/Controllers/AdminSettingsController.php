@@ -46,6 +46,28 @@ class AdminSettingsController
         redirect('/admin/settings');
     }
 
+    public static function updateBilling(): void
+    {
+        Auth::requireSuperAdmin();
+        Csrf::verifyOrFail();
+
+        $data = [
+            'stripe_publishable_key' => input('stripe_publishable_key', ''),
+            'stripe_webhook_secret' => input('stripe_webhook_secret', ''),
+        ];
+
+        $secretKey = input('stripe_secret_key', '');
+        if ($secretKey !== '') {
+            $data['stripe_secret_key'] = $secretKey;
+        }
+
+        SystemSetting::update($data);
+        AdminActivityLog::record('system_billing_updated');
+
+        Session::flash('success', 'Configuration de facturation Stripe enregistrée.');
+        redirect('/admin/settings');
+    }
+
     public static function testSmtp(): void
     {
         Auth::requireSuperAdmin();

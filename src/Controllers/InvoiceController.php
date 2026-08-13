@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\ActivityLog;
 use App\Core\Csrf;
 use App\Core\Mailer;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Client;
@@ -82,6 +83,7 @@ class InvoiceController
 
     public static function setRecurring(string $id): void
     {
+        ModuleAccess::requireModule('recurring_invoices');
         Csrf::verifyOrFail();
         $isRecurring = input('is_recurring') ? 1 : 0;
         $interval = in_array(input('recurrence_interval'), ['monthly', 'quarterly', 'yearly'], true) ? input('recurrence_interval') : null;
@@ -104,6 +106,7 @@ class InvoiceController
 
     public static function generateNext(string $id): void
     {
+        ModuleAccess::requireModule('recurring_invoices');
         Csrf::verifyOrFail();
         $invoice = Invoice::find((int) $id);
         if (!$invoice) { http_response_code(404); die('Facture introuvable.'); }

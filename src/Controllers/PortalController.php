@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Client;
@@ -13,6 +14,7 @@ class PortalController
 {
     public static function generateLink(string $clientId): void
     {
+        ModuleAccess::requireModule('client_portal');
         Csrf::verifyOrFail();
 
         if (!Client::find((int) $clientId)) {

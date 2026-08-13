@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Mailer;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\CompanySettings;
@@ -47,6 +48,7 @@ class SettingsController
     public static function generateIcsToken(): void
     {
         Auth::requireAdmin();
+        ModuleAccess::requireModule('calendar_ics');
         Csrf::verifyOrFail();
 
         CompanySettings::update(['ics_feed_token' => bin2hex(random_bytes(24))]);

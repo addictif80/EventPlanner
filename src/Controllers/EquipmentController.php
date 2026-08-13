@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Equipment;
@@ -13,16 +14,19 @@ class EquipmentController
 {
     public static function index(): void
     {
+        ModuleAccess::requireModule('equipment');
         View::render('equipment/index', ['title' => 'Matériel', 'equipment' => Equipment::all('name ASC')]);
     }
 
     public static function create(): void
     {
+        ModuleAccess::requireModule('equipment');
         View::render('equipment/form', ['title' => 'Nouvel article', 'item' => null]);
     }
 
     public static function store(): void
     {
+        ModuleAccess::requireModule('equipment');
         Csrf::verifyOrFail();
         Equipment::create([
             'name' => input('name', ''),
@@ -36,6 +40,7 @@ class EquipmentController
 
     public static function edit(string $id): void
     {
+        ModuleAccess::requireModule('equipment');
         $item = Equipment::find((int) $id);
         if (!$item) { http_response_code(404); die('Article introuvable.'); }
         View::render('equipment/form', ['title' => 'Modifier', 'item' => $item]);
@@ -43,6 +48,7 @@ class EquipmentController
 
     public static function update(string $id): void
     {
+        ModuleAccess::requireModule('equipment');
         Csrf::verifyOrFail();
         Equipment::update((int) $id, [
             'name' => input('name', ''),
@@ -56,6 +62,7 @@ class EquipmentController
 
     public static function destroy(string $id): void
     {
+        ModuleAccess::requireModule('equipment');
         Csrf::verifyOrFail();
         Equipment::delete((int) $id);
         Session::flash('success', 'Matériel supprimé.');
@@ -64,6 +71,7 @@ class EquipmentController
 
     public static function book(string $eventId): void
     {
+        ModuleAccess::requireModule('equipment');
         Csrf::verifyOrFail();
 
         $stmt = Database::connection()->prepare('SELECT event_date FROM events WHERE id = ? AND organization_id = ?');
@@ -97,6 +105,7 @@ class EquipmentController
 
     public static function unbook(string $eventId, string $bookingId): void
     {
+        ModuleAccess::requireModule('equipment');
         Csrf::verifyOrFail();
         Database::connection()->prepare('DELETE FROM equipment_bookings WHERE id = ? AND event_id = ? AND organization_id = ?')
             ->execute([$bookingId, $eventId, Auth::organizationId()]);

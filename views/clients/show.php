@@ -93,11 +93,13 @@
 </div>
 
 <div class="mt-3">
+  <?php if (\App\Core\ModuleAccess::has('client_portal')): ?>
   <form method="post" action="<?= url('/clients/' . $client['id'] . '/portal-link') ?>">
     <?= csrf_field() ?>
     <button class="btn btn-sm btn-outline-dark"><i class="bi bi-link-45deg"></i> Générer un lien portail client</button>
   </form>
   <?php if (!empty($portalLink)): ?>
     <div class="alert alert-info mt-2 mb-0">Lien à transmettre au client (valable 30 jours) : <a href="<?= View::e($portalLink) ?>"><?= View::e($portalLink) ?></a></div>
+  <?php endif; ?>
   <?php endif; ?>
 </div>

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Models\CompanySettings;
 use App\Models\Invoice;
@@ -18,6 +19,7 @@ class StripeController
 {
     public static function createPaymentLink(string $id): void
     {
+        ModuleAccess::requireModule('stripe_payments');
         Csrf::verifyOrFail();
 
         $invoice = Invoice::find((int) $id);
@@ -167,27 +169,6 @@ class StripeController
 
     private static function request(string $secretKey, string $path, ?array $params, string $method = 'POST'): array
     {
-        $ch = curl_init('https://api.stripe.com/v1/' . $path);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_USERPWD => $secretKey . ':',
-            CURLOPT_TIMEOUT => 20,
-        ]);
-
-        if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params ?? []));
-        }
-
-        $response = curl_exec($ch);
-        if ($response === false) {
-            $error = curl_error($ch);
-            curl_close($ch);
-            throw new \RuntimeException($error ?: 'Connexion à Stripe impossible.');
-        }
-        curl_close($ch);
-
-        $decoded = json_decode($response, true);
-        return is_array($decoded) ? $decoded : [];
+        return \App\Core\StripeClient::request($secretKey, $path, $params, $method);
     }
 }

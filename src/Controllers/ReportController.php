@@ -4,12 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\ModuleAccess;
 use App\Core\View;
 
 class ReportController
 {
     public static function index(): void
     {
+        ModuleAccess::requireModule('reports');
         $pdo = Database::connection();
         $orgId = Auth::organizationId();
 

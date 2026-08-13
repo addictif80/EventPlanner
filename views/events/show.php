@@ -1,4 +1,4 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\ModuleAccess; use App\Core\View; ?>
 <?php
 $statusLabels = ['draft' => 'Brouillon', 'confirmed' => 'Confirmé', 'in_progress' => 'En cours', 'completed' => 'Terminé', 'cancelled' => 'Annulé'];
 $statusColors = ['draft' => 'secondary', 'confirmed' => 'primary', 'in_progress' => 'warning', 'completed' => 'success', 'cancelled' => 'danger'];
@@ -21,11 +21,17 @@ $clientName = $event['company_name'] ?: trim($event['first_name'] . ' ' . $event
 </div>
 
 <div class="d-flex gap-2 mb-3 flex-wrap">
+  <?php if (ModuleAccess::has('guests')): ?>
   <a href="<?= url('/events/' . $event['id'] . '/guests') ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-person-lines-fill"></i> Invités</a>
+  <?php endif; ?>
+  <?php if (ModuleAccess::has('ticketing')): ?>
   <a href="<?= url('/events/' . $event['id'] . '/tickets') ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-ticket-perforated"></i> Billetterie</a>
+  <?php endif; ?>
   <a href="<?= url('/events/' . $event['id'] . '/dayof') ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-clock-history"></i> Jour-J</a>
+  <?php if (ModuleAccess::has('contracts')): ?>
   <a href="<?= url('/contracts/create') ?>?event_id=<?= $event['id'] ?>&client_id=<?= $event['client_id'] ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-earmark-text"></i> Contrat</a>
-  <?php if ($event['status'] === 'completed'): ?>
+  <?php endif; ?>
+  <?php if ($event['status'] === 'completed' && ModuleAccess::has('satisfaction_survey')): ?>
   <form method="post" action="<?= url('/events/' . $event['id'] . '/survey/send') ?>" onsubmit="return confirm('Envoyer le sondage de satisfaction au client ?');">
     <?= csrf_field() ?>
     <button class="btn btn-sm btn-outline-dark"><i class="bi bi-star"></i> Envoyer le sondage de satisfaction</button>

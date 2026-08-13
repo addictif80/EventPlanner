@@ -37,7 +37,9 @@ use App\Controllers\AdminDocumentController;
 use App\Controllers\AdminBlocklistController;
 use App\Controllers\AdminTicketController;
 use App\Controllers\AdminSettingsController;
+use App\Controllers\AdminOfferController;
 use App\Controllers\SupportController;
+use App\Controllers\SubscriptionController;
 
 $router = new Router();
 
@@ -236,6 +238,15 @@ $router->get('/settings/activity-log', fn() => SettingsController::activityLog()
 $router->post('/invoices/{id}/stripe-link', fn($p) => StripeController::createPaymentLink($p['id']));
 $router->get('/stripe/return/{id}', fn($p) => StripeController::handleReturn($p['id']));
 
+// Abonnement (côté organisation)
+$router->get('/subscription', fn() => SubscriptionController::index());
+$router->post('/subscription/checkout', fn() => SubscriptionController::checkout());
+$router->post('/subscription/change-plan', fn() => SubscriptionController::changePlan());
+$router->post('/subscription/add-addon', fn() => SubscriptionController::addAddon());
+$router->post('/subscription/remove-addon/{id}', fn($p) => SubscriptionController::removeAddon($p['id']));
+$router->post('/subscription/cancel', fn() => SubscriptionController::cancel());
+$router->post('/subscription/webhook', fn() => SubscriptionController::webhook());
+
 // Support (tickets, côté organisation)
 $router->get('/support', fn() => SupportController::index());
 $router->get('/support/create', fn() => SupportController::create());
@@ -248,7 +259,24 @@ $router->get('/admin', fn() => AdminController::dashboard());
 $router->get('/admin/organizations', fn() => AdminController::organizations());
 $router->get('/admin/organizations/{id}', fn($p) => AdminController::showOrganization($p['id']));
 $router->post('/admin/organizations/{id}/status', fn($p) => AdminController::toggleOrganizationStatus($p['id']));
+$router->post('/admin/organizations/{id}/assign-plan', fn($p) => AdminController::assignPlan($p['id']));
 $router->get('/admin/activity-log', fn() => AdminController::activityLog());
+
+$router->get('/admin/offers', fn() => AdminOfferController::index());
+$router->get('/admin/offers/plans/create', fn() => AdminOfferController::createPlan());
+$router->post('/admin/offers/plans', fn() => AdminOfferController::storePlan());
+$router->get('/admin/offers/plans/{id}/edit', fn($p) => AdminOfferController::editPlan($p['id']));
+$router->post('/admin/offers/plans/{id}', fn($p) => AdminOfferController::updatePlan($p['id']));
+$router->post('/admin/offers/plans/{id}/delete', fn($p) => AdminOfferController::destroyPlan($p['id']));
+$router->get('/admin/offers/modules/create', fn() => AdminOfferController::createModule());
+$router->post('/admin/offers/modules', fn() => AdminOfferController::storeModule());
+$router->get('/admin/offers/modules/{id}/edit', fn($p) => AdminOfferController::editModule($p['id']));
+$router->post('/admin/offers/modules/{id}', fn($p) => AdminOfferController::updateModule($p['id']));
+$router->get('/admin/offers/packages/create', fn() => AdminOfferController::createPackage());
+$router->post('/admin/offers/packages', fn() => AdminOfferController::storePackage());
+$router->get('/admin/offers/packages/{id}/edit', fn($p) => AdminOfferController::editPackage($p['id']));
+$router->post('/admin/offers/packages/{id}', fn($p) => AdminOfferController::updatePackage($p['id']));
+$router->post('/admin/offers/packages/{id}/delete', fn($p) => AdminOfferController::destroyPackage($p['id']));
 
 $router->get('/admin/users', fn() => AdminUserController::index());
 $router->get('/admin/users/{id}/edit', fn($p) => AdminUserController::edit($p['id']));
@@ -274,6 +302,7 @@ $router->post('/admin/tickets/{id}/status', fn($p) => AdminTicketController::upd
 $router->get('/admin/settings', fn() => AdminSettingsController::index());
 $router->post('/admin/settings/smtp', fn() => AdminSettingsController::updateSmtp());
 $router->post('/admin/settings/smtp/test', fn() => AdminSettingsController::testSmtp());
+$router->post('/admin/settings/billing', fn() => AdminSettingsController::updateBilling());
 
 // --- Routes publiques (sans authentification) ---
 $router->get('/rsvp/{token}', fn($p) => GuestController::rsvpForm($p['token']));

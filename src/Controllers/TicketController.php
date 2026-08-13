@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Event;
@@ -15,6 +16,7 @@ class TicketController
 {
     public static function index(string $eventId): void
     {
+        ModuleAccess::requireModule('ticketing');
         $event = Event::find((int) $eventId);
         if (!$event) { http_response_code(404); die('Événement introuvable.'); }
 
@@ -28,6 +30,7 @@ class TicketController
 
     public static function storeCategory(string $eventId): void
     {
+        ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
         if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
         TicketCategory::create([
@@ -42,6 +45,7 @@ class TicketController
 
     public static function destroyCategory(string $eventId, string $categoryId): void
     {
+        ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
         TicketCategory::delete((int) $categoryId);
         Session::flash('success', 'Catégorie supprimée.');
@@ -50,6 +54,7 @@ class TicketController
 
     public static function generate(string $eventId): void
     {
+        ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
         $categoryId = (int) input('ticket_category_id');
         if (!TicketCategory::find($categoryId)) { http_response_code(404); die('Catégorie introuvable.'); }
@@ -67,6 +72,7 @@ class TicketController
 
     public static function cancel(string $eventId, string $ticketId): void
     {
+        ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
         Ticket::update((int) $ticketId, ['status' => 'cancelled']);
         Session::flash('success', 'Billet annulé.');
@@ -75,6 +81,7 @@ class TicketController
 
     public static function checkinForm(string $eventId): void
     {
+        ModuleAccess::requireModule('ticketing');
         $event = Event::find((int) $eventId);
         if (!$event) { http_response_code(404); die('Événement introuvable.'); }
 
@@ -86,6 +93,7 @@ class TicketController
 
     public static function checkinSubmit(string $eventId): void
     {
+        ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
         $code = strtoupper(trim(input('code', '')));
         $ticket = Ticket::findByCode($code);

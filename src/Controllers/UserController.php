@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\User;
@@ -26,6 +27,11 @@ class UserController
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
+
+        if (ModuleAccess::memberLimitReached()) {
+            Session::flash('error', "Le nombre maximum de membres de votre offre est atteint. Passez à une offre supérieure dans Abonnement pour ajouter des utilisateurs.");
+            redirect('/users/create');
+        }
 
         $password = input('password', '');
         if (strlen($password) < 8) {

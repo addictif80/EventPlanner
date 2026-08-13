@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Csrf;
+use App\Core\ModuleAccess;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Event;
@@ -13,11 +14,13 @@ class PurchaseOrderController
 {
     public static function index(): void
     {
+        ModuleAccess::requireModule('purchase_orders');
         View::render('purchase_orders/index', ['title' => 'Bons de commande', 'orders' => PurchaseOrder::allWithProvider()]);
     }
 
     public static function create(): void
     {
+        ModuleAccess::requireModule('purchase_orders');
         View::render('purchase_orders/form', [
             'title' => 'Nouveau bon de commande',
             'providers' => Provider::all('name ASC'),
@@ -27,6 +30,7 @@ class PurchaseOrderController
 
     public static function store(): void
     {
+        ModuleAccess::requireModule('purchase_orders');
         Csrf::verifyOrFail();
 
         if (!Provider::find((int) input('provider_id'))) {
@@ -57,6 +61,7 @@ class PurchaseOrderController
 
     public static function show(string $id): void
     {
+        ModuleAccess::requireModule('purchase_orders');
         $po = PurchaseOrder::findWithRelations((int) $id);
         if (!$po) { http_response_code(404); die('Bon de commande introuvable.'); }
 
@@ -69,6 +74,7 @@ class PurchaseOrderController
 
     public static function updateStatus(string $id): void
     {
+        ModuleAccess::requireModule('purchase_orders');
         Csrf::verifyOrFail();
         $status = input('status');
         if (in_array($status, ['draft', 'sent', 'confirmed', 'cancelled'], true)) {
@@ -80,6 +86,7 @@ class PurchaseOrderController
 
     public static function destroy(string $id): void
     {
+        ModuleAccess::requireModule('purchase_orders');
         Csrf::verifyOrFail();
         PurchaseOrder::delete((int) $id);
         Session::flash('success', 'Bon de commande supprimé.');
@@ -88,6 +95,7 @@ class PurchaseOrderController
 
     public static function printView(string $id): void
     {
+        ModuleAccess::requireModule('purchase_orders');
         $po = PurchaseOrder::findWithRelations((int) $id);
         if (!$po) { http_response_code(404); die('Bon de commande introuvable.'); }
 

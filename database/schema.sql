@@ -37,7 +37,10 @@ CREATE TABLE IF NOT EXISTS system_settings (
     smtp_password VARCHAR(255) DEFAULT '',
     smtp_from_email VARCHAR(190) DEFAULT '',
     smtp_from_name VARCHAR(190) DEFAULT '',
-    smtp_is_configured TINYINT(1) NOT NULL DEFAULT 0
+    smtp_is_configured TINYINT(1) NOT NULL DEFAULT 0,
+    stripe_secret_key VARCHAR(255) DEFAULT '',
+    stripe_publishable_key VARCHAR(190) DEFAULT '',
+    stripe_webhook_secret VARCHAR(190) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT IGNORE INTO system_settings (id) VALUES (1);
@@ -639,3 +642,111 @@ CREATE TABLE IF NOT EXISTS client_portal_tokens (
     CONSTRAINT fk_portal_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
     CONSTRAINT fk_portal_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- === Abonnements payants (offres définies par le super admin, facturées via
+-- Stripe Subscriptions sur le compte Stripe de la PLATEFORME — distinct du
+-- compte Stripe propre à chaque organisation, utilisé lui pour encaisser le
+-- paiement de SES factures clients, voir company_settings.stripe_secret_key) ===
+
+CREATE TABLE IF NOT EXISTS modules (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    module_key VARCHAR(60) NOT NULL UNIQUE,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(255) DEFAULT '',
+    monthly_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    stripe_product_id VARCHAR(120) DEFAULT '',
+    stripe_price_id VARCHAR(120) DEFAULT '',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS plans (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(255) DEFAULT '',
+    monthly_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    max_members INT UNSIGNED DEFAULT NULL,
+    stripe_product_id VARCHAR(120) DEFAULT '',
+    stripe_price_id VARCHAR(120) DEFAULT '',
+    is_default_signup TINYINT(1) NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS plan_modules (
+    plan_id INT UNSIGNED NOT NULL,
+    module_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY (plan_id, module_id),
+    CONSTRAINT fk_plan_modules_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE,
+    CONSTRAINT fk_plan_modules_module FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS module_packages (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(255) DEFAULT '',
+    monthly_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    stripe_product_id VARCHAR(120) DEFAULT '',
+    stripe_price_id VARCHAR(120) DEFAULT '',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS module_package_items (
+    package_id INT UNSIGNED NOT NULL,
+    module_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY (package_id, module_id),
+    CONSTRAINT fk_package_items_package FOREIGN KEY (package_id) REFERENCES module_packages(id) ON DELETE CASCADE,
+    CONSTRAINT fk_package_items_module FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS organization_subscriptions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT UNSIGNED NOT NULL UNIQUE,
+    plan_id INT UNSIGNED DEFAULT NULL,
+    status ENUM('trialing', 'active', 'past_due', 'canceled', 'incomplete') NOT NULL DEFAULT 'incomplete',
+    stripe_customer_id VARCHAR(120) DEFAULT '',
+    stripe_subscription_id VARCHAR(120) DEFAULT '',
+    current_period_end DATETIME DEFAULT NULL,
+    cancel_at_period_end TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_org_sub_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_org_sub_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS organization_subscription_items (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_subscription_id INT UNSIGNED NOT NULL,
+    item_type ENUM('plan', 'module', 'package') NOT NULL,
+    module_id INT UNSIGNED DEFAULT NULL,
+    package_id INT UNSIGNED DEFAULT NULL,
+    stripe_subscription_item_id VARCHAR(120) DEFAULT '',
+    stripe_price_id VARCHAR(120) DEFAULT '',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sub_items_sub FOREIGN KEY (organization_subscription_id) REFERENCES organization_subscriptions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_sub_items_module FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+    CONSTRAINT fk_sub_items_package FOREIGN KEY (package_id) REFERENCES module_packages(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO modules (module_key, name, description) VALUES
+    ('contracts', 'Contrats & signature électronique', 'Génération de contrats et signature électronique en ligne.'),
+    ('purchase_orders', 'Bons de commande fournisseurs', 'Émission de bons de commande auprès des prestataires.'),
+    ('equipment', 'Gestion de stock matériel', 'Réservation de matériel avec détection de surbooking.'),
+    ('ticketing', 'Billetterie & check-in', "Catégories de billets, génération et contrôle d'accès jour J."),
+    ('guests', 'Invités, RSVP & plans de table', "Listes d'invités, confirmation RSVP publique, plans de table."),
+    ('reports', 'Rapports & analytics avancés', 'Graphiques de chiffre d\'affaires, conversion, prévisionnel.'),
+    ('client_portal', 'Portail client', 'Accès self-service en lecture seule pour vos clients.'),
+    ('stripe_payments', 'Paiement en ligne (factures)', 'Génération de liens de paiement Stripe sur vos factures.'),
+    ('recurring_invoices', 'Factures récurrentes', 'Génération automatique des échéances de factures récurrentes.'),
+    ('satisfaction_survey', 'Sondage de satisfaction', 'Envoi de sondages post-événement.'),
+    ('calendar_ics', 'Flux calendrier ICS', 'Abonnement Google Calendar / Outlook / Apple Calendar.');
+
+-- Offre gratuite assignée automatiquement à l'inscription : la gestion
+-- d'événements de base (clients, événements, devis, factures) reste toujours
+-- accessible quel que soit le plan ; seuls les modules listés ci-dessus sont
+-- soumis à abonnement. Le super admin crée les offres payantes (Paramètres >
+-- Offres) qui débloquent des modules et/ou davantage de membres.
+INSERT IGNORE INTO plans (id, name, description, monthly_price, max_members, is_default_signup, is_active, sort_order) VALUES
+    (1, 'Découverte', 'Offre gratuite par défaut à l\'inscription : fonctionnalités de base, 3 membres maximum, sans module additionnel.', 0, 3, 1, 1, 0);
