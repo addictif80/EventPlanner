@@ -2,6 +2,9 @@
 <ul class="nav nav-tabs mb-3">
   <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-company">Entreprise</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-smtp">Email (SMTP)</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-templates">Modèles d'emails</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-integrations">Intégrations</a></li>
+  <li class="nav-item"><a class="nav-link" href="<?= url('/settings/activity-log') ?>">Journal d'activité</a></li>
 </ul>
 
 <div class="tab-content">
@@ -64,6 +67,70 @@
         <input type="email" name="test_email" class="form-control" placeholder="Adresse de test (par défaut : votre email)" style="max-width:320px;">
         <button class="btn btn-outline-primary">Envoyer un email de test</button>
       </form>
+    </div></div>
+  </div>
+
+  <div class="tab-pane fade" id="tab-templates">
+    <div class="card"><div class="card-body">
+      <p class="text-muted">Personnalisez le sujet et l'introduction des emails automatiques. Utilisez <code>{number}</code> dans le sujet pour insérer le numéro de devis/facture.</p>
+      <form method="post" action="<?= url('/settings/email-templates') ?>">
+        <?= csrf_field() ?>
+        <?php $templateLabels = ['quote' => 'Envoi de devis', 'invoice' => 'Envoi de facture', 'reminder' => 'Relance impayé']; ?>
+        <?php foreach ($templates as $t): ?>
+        <div class="mb-4 pb-3 border-bottom">
+          <h3 class="h6"><?= View::e($templateLabels[$t['template_key']] ?? $t['template_key']) ?></h3>
+          <div class="mb-2">
+            <label class="form-label small">Sujet</label>
+            <input type="text" name="subject[<?= $t['template_key'] ?>]" class="form-control" value="<?= View::e($t['subject']) ?>">
+          </div>
+          <div>
+            <label class="form-label small">Introduction</label>
+            <textarea name="intro[<?= $t['template_key'] ?>]" class="form-control" rows="2"><?= View::e($t['intro']) ?></textarea>
+          </div>
+        </div>
+        <?php endforeach; ?>
+        <button class="btn btn-primary">Enregistrer les modèles</button>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="tab-pane fade" id="tab-integrations">
+    <div class="card mb-3"><div class="card-body">
+      <h3 class="h6">Paiement en ligne (Stripe)</h3>
+      <p class="text-muted small">Renseignez vos propres clés API Stripe (Dashboard Stripe → Développeurs → Clés API) pour activer la génération de liens de paiement sur les factures.</p>
+      <form method="post" action="<?= url('/settings/company') ?>">
+        <?= csrf_field() ?>
+        <input type="hidden" name="company_name" value="<?= View::e($company['company_name'] ?? '') ?>">
+        <input type="hidden" name="default_tax_rate" value="<?= View::e((string)($company['default_tax_rate'] ?? 20)) ?>">
+        <input type="hidden" name="currency" value="<?= View::e($company['currency'] ?? 'EUR') ?>">
+        <input type="hidden" name="quote_prefix" value="<?= View::e($company['quote_prefix'] ?? 'DEV-') ?>">
+        <input type="hidden" name="invoice_prefix" value="<?= View::e($company['invoice_prefix'] ?? 'FAC-') ?>">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Clé secrète Stripe</label><input type="password" name="stripe_secret_key" class="form-control" value="<?= View::e($company['stripe_secret_key'] ?? '') ?>" placeholder="sk_live_..."></div>
+          <div class="col-md-6"><label class="form-label">Clé publiable Stripe</label><input type="text" name="stripe_publishable_key" class="form-control" value="<?= View::e($company['stripe_publishable_key'] ?? '') ?>" placeholder="pk_live_..."></div>
+        </div>
+        <button class="btn btn-primary mt-3">Enregistrer</button>
+      </form>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Flux calendrier (Google Calendar / Outlook)</h3>
+      <p class="text-muted small">Abonnez votre agenda (Google Calendar, Outlook, Apple Calendar...) à ce flux pour voir automatiquement tous vos événements.</p>
+      <?php if (!empty($company['ics_feed_token'])): ?>
+        <div class="input-group mb-2">
+          <input type="text" readonly class="form-control" value="<?= View::e((($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . url('/calendar/' . $company['ics_feed_token'] . '.ics'))) ?>">
+        </div>
+      <?php endif; ?>
+      <form method="post" action="<?= url('/settings/ics-token') ?>">
+        <?= csrf_field() ?>
+        <button class="btn btn-outline-dark btn-sm"><?= !empty($company['ics_feed_token']) ? 'Régénérer le lien' : 'Générer le lien du flux calendrier' ?></button>
+      </form>
+    </div></div>
+
+    <div class="card mt-3"><div class="card-body">
+      <h3 class="h6">Export emailing</h3>
+      <p class="text-muted small">Exportez la liste de vos clients (email, nom) au format CSV pour l'importer dans Mailchimp ou tout autre outil d'emailing.</p>
+      <a href="<?= url('/export/clients.csv') ?>" class="btn btn-outline-dark btn-sm">Exporter les emails clients (CSV)</a>
     </div></div>
   </div>
 </div>

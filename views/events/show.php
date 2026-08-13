@@ -20,6 +20,19 @@ $clientName = $event['company_name'] ?: trim($event['first_name'] . ' ' . $event
   </div>
 </div>
 
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  <a href="<?= url('/events/' . $event['id'] . '/guests') ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-person-lines-fill"></i> Invités</a>
+  <a href="<?= url('/events/' . $event['id'] . '/tickets') ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-ticket-perforated"></i> Billetterie</a>
+  <a href="<?= url('/events/' . $event['id'] . '/dayof') ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-clock-history"></i> Jour-J</a>
+  <a href="<?= url('/contracts/create') ?>?event_id=<?= $event['id'] ?>&client_id=<?= $event['client_id'] ?>" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-earmark-text"></i> Contrat</a>
+  <?php if ($event['status'] === 'completed'): ?>
+  <form method="post" action="<?= url('/events/' . $event['id'] . '/survey/send') ?>" onsubmit="return confirm('Envoyer le sondage de satisfaction au client ?');">
+    <?= csrf_field() ?>
+    <button class="btn btn-sm btn-outline-dark"><i class="bi bi-star"></i> Envoyer le sondage de satisfaction</button>
+  </form>
+  <?php endif; ?>
+</div>
+
 <div class="row g-3 mb-3">
   <div class="col-md-4">
     <div class="card h-100"><div class="card-body">
@@ -107,6 +120,33 @@ $clientName = $event['company_name'] ?: trim($event['first_name'] . ' ' . $event
 
   <div class="col-md-6">
     <div class="card"><div class="card-body">
+      <h3 class="h6">Matériel réservé</h3>
+      <form method="post" action="<?= url('/events/' . $event['id'] . '/equipment') ?>" class="d-flex gap-2 mb-3">
+        <?= csrf_field() ?>
+        <select name="equipment_id" class="form-select form-select-sm" required>
+          <option value="">Ajouter du matériel...</option>
+          <?php foreach ($equipmentList as $eq): ?><option value="<?= $eq['id'] ?>"><?= View::e($eq['name']) ?> (<?= $eq['total_quantity'] ?> dispo.)</option><?php endforeach; ?>
+        </select>
+        <input type="number" name="quantity" class="form-control form-control-sm" value="1" style="max-width:80px;">
+        <button class="btn btn-sm btn-primary">+</button>
+      </form>
+      <ul class="list-group list-group-flush">
+        <?php foreach ($equipmentBookings as $eb): ?>
+        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+          <span><?= View::e($eb['name']) ?> — Qté : <?= $eb['quantity'] ?></span>
+          <form method="post" action="<?= url('/events/' . $event['id'] . '/equipment/' . $eb['id'] . '/delete') ?>">
+            <?= csrf_field() ?>
+            <button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button>
+          </form>
+        </li>
+        <?php endforeach; ?>
+        <?php if (empty($equipmentBookings)): ?><li class="list-group-item px-0 text-muted small">Aucun matériel réservé.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
       <h3 class="h6">Devis</h3>
       <ul class="list-unstyled mb-0">
         <?php foreach ($quotes as $q): ?>
@@ -126,5 +166,25 @@ $clientName = $event['company_name'] ?: trim($event['first_name'] . ' ' . $event
         <?php if (empty($invoices)): ?><li class="text-muted small">Aucune facture.</li><?php endif; ?>
       </ul>
     </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Notes internes</h3>
+      <form method="post" action="<?= url('/events/' . $event['id'] . '/notes') ?>" class="d-flex gap-2 mb-3">
+        <?= csrf_field() ?>
+        <input type="text" name="body" class="form-control form-control-sm" placeholder="Ajouter une note..." required>
+        <button class="btn btn-sm btn-primary">+</button>
+      </form>
+      <ul class="list-unstyled mb-0">
+        <?php foreach (($notes ?? []) as $n): ?>
+          <li class="py-1 border-bottom small"><?= View::e($n['body']) ?> <span class="text-muted">— <?= View::e($n['author_name'] ?? '') ?>, <?= View::date($n['created_at'], 'd/m/Y H:i') ?></span></li>
+        <?php endforeach; ?>
+        <?php if (empty($notes)): ?><li class="text-muted small">Aucune note.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <?php $eventId = $event['id']; include __DIR__ . '/../partials/documents.php'; ?>
   </div>
 </div>

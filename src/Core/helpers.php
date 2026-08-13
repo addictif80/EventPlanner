@@ -45,7 +45,7 @@ function is_post(): bool
     return ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
 }
 
-function input(string $key, $default = null)
+function input(string $key, $default = '')
 {
     $value = $_POST[$key] ?? $default;
     return is_string($value) ? trim($value) : $value;

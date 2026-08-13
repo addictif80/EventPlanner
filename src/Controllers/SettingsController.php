@@ -9,6 +9,7 @@ use App\Core\Mailer;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\CompanySettings;
+use App\Models\EmailTemplate;
 
 class SettingsController
 {
@@ -23,7 +24,44 @@ class SettingsController
             'title' => 'Paramètres',
             'company' => CompanySettings::get(),
             'smtp' => $smtp,
+            'templates' => EmailTemplate::all(),
         ]);
+    }
+
+    public static function updateEmailTemplates(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        foreach (['quote', 'invoice', 'reminder'] as $key) {
+            if (isset($_POST['subject'][$key])) {
+                EmailTemplate::update($key, trim($_POST['subject'][$key]), trim($_POST['intro'][$key] ?? ''));
+            }
+        }
+
+        Session::flash('success', 'Modèles d\'emails mis à jour.');
+        redirect('/settings');
+    }
+
+    public static function generateIcsToken(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        CompanySettings::update(['ics_feed_token' => bin2hex(random_bytes(24))]);
+        Session::flash('success', 'Lien du flux calendrier généré.');
+        redirect('/settings');
+    }
+
+    public static function activityLog(): void
+    {
+        Auth::requireAdmin();
+
+        $stmt = Database::connection()->query(
+            'SELECT al.*, u.name AS user_name FROM activity_log al LEFT JOIN users u ON u.id = al.user_id ORDER BY al.created_at DESC LIMIT 200'
+        );
+
+        View::render('settings/activity_log', ['title' => "Journal d'activité", 'logs' => $stmt->fetchAll()]);
     }
 
     public static function updateCompany(): void

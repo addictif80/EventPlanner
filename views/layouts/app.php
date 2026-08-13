@@ -27,8 +27,13 @@ $flashes = flashes();
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/events') ?>"><i class="bi bi-calendar3 me-2"></i>Événements</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/quotes') ?>"><i class="bi bi-file-earmark-text me-2"></i>Devis</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/invoices') ?>"><i class="bi bi-receipt me-2"></i>Factures</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/contracts') ?>"><i class="bi bi-file-earmark-text me-2"></i>Contrats</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/reports') ?>"><i class="bi bi-graph-up me-2"></i>Rapports</a></li>
+      <li class="nav-item mt-2"><span class="text-uppercase small text-white-50 px-2">Ressources</span></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/providers') ?>"><i class="bi bi-truck me-2"></i>Prestataires</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/purchase-orders') ?>"><i class="bi bi-cart-check me-2"></i>Bons de commande</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/venues') ?>"><i class="bi bi-geo-alt me-2"></i>Lieux</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="<?= url('/equipment') ?>"><i class="bi bi-boxes me-2"></i>Matériel</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="<?= url('/products') ?>"><i class="bi bi-box-seam me-2"></i>Catalogue</a></li>
       <li class="nav-item mt-3"><span class="text-uppercase small text-white-50 px-2">Administration</span></li>
       <?php if ($user && $user['role'] === 'admin'): ?>

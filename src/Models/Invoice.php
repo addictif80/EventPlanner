@@ -78,6 +78,11 @@ class Invoice extends Model
         $stmt->execute([$invoiceId]);
         $paid = (float) $stmt->fetchColumn();
 
+        // Avoirs (credit notes) reduce the amount actually owed, same as a payment would.
+        $stmt = $pdo->prepare('SELECT COALESCE(SUM(amount), 0) FROM credit_notes WHERE invoice_id = ?');
+        $stmt->execute([$invoiceId]);
+        $paid += (float) $stmt->fetchColumn();
+
         $stmt = $pdo->prepare('SELECT total, due_date, status FROM invoices WHERE id = ?');
         $stmt->execute([$invoiceId]);
         $invoice = $stmt->fetch();

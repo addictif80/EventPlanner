@@ -15,6 +15,21 @@ use App\Controllers\PaymentController;
 use App\Controllers\TaskController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
+use App\Controllers\GuestController;
+use App\Controllers\TicketController;
+use App\Controllers\ContractController;
+use App\Controllers\DocumentController;
+use App\Controllers\PurchaseOrderController;
+use App\Controllers\EquipmentController;
+use App\Controllers\CreditNoteController;
+use App\Controllers\EventOpsController;
+use App\Controllers\NoteController;
+use App\Controllers\SurveyController;
+use App\Controllers\PortalController;
+use App\Controllers\ReportController;
+use App\Controllers\ExportController;
+use App\Controllers\CalendarController;
+use App\Controllers\StripeController;
 
 $router = new Router();
 
@@ -96,6 +111,7 @@ $router->post('/invoices/{id}', fn($p) => InvoiceController::update($p['id']));
 $router->post('/invoices/{id}/delete', fn($p) => InvoiceController::destroy($p['id']));
 $router->post('/invoices/{id}/send', fn($p) => InvoiceController::send($p['id']));
 $router->get('/invoices/{id}/print', fn($p) => InvoiceController::printView($p['id']));
+$router->post('/invoices/{id}/remind', fn($p) => InvoiceController::sendReminder($p['id']));
 $router->post('/invoices/{id}/payments', fn($p) => PaymentController::store($p['id']));
 $router->post('/invoices/{id}/payments/{paymentId}/delete', fn($p) => PaymentController::destroy($p['id'], $p['paymentId']));
 
@@ -109,6 +125,8 @@ $router->get('/settings', fn() => SettingsController::index());
 $router->post('/settings/company', fn() => SettingsController::updateCompany());
 $router->post('/settings/smtp', fn() => SettingsController::updateSmtp());
 $router->post('/settings/smtp/test', fn() => SettingsController::testSmtp());
+$router->post('/settings/email-templates', fn() => SettingsController::updateEmailTemplates());
+$router->post('/settings/ics-token', fn() => SettingsController::generateIcsToken());
 
 // Users (admin only)
 $router->get('/users', fn() => UserController::index());
@@ -117,5 +135,105 @@ $router->post('/users', fn() => UserController::store());
 $router->get('/users/{id}/edit', fn($p) => UserController::edit($p['id']));
 $router->post('/users/{id}', fn($p) => UserController::update($p['id']));
 $router->post('/users/{id}/delete', fn($p) => UserController::destroy($p['id']));
+
+// Guests, RSVP, seating
+$router->get('/events/{id}/guests', fn($p) => GuestController::index($p['id']));
+$router->post('/events/{id}/guests', fn($p) => GuestController::store($p['id']));
+$router->post('/guests/{id}', fn($p) => GuestController::update($p['id']));
+$router->post('/guests/{id}/delete', fn($p) => GuestController::destroy($p['id']));
+$router->post('/guests/{id}/invite', fn($p) => GuestController::sendInvite($p['id']));
+$router->post('/events/{id}/tables', fn($p) => GuestController::storeTable($p['id']));
+$router->post('/events/{id}/tables/{tableId}/delete', fn($p) => GuestController::destroyTable($p['id'], $p['tableId']));
+
+// Ticketing + check-in
+$router->get('/events/{id}/tickets', fn($p) => TicketController::index($p['id']));
+$router->post('/events/{id}/ticket-categories', fn($p) => TicketController::storeCategory($p['id']));
+$router->post('/events/{id}/ticket-categories/{catId}/delete', fn($p) => TicketController::destroyCategory($p['id'], $p['catId']));
+$router->post('/events/{id}/tickets/generate', fn($p) => TicketController::generate($p['id']));
+$router->post('/events/{id}/tickets/{ticketId}/cancel', fn($p) => TicketController::cancel($p['id'], $p['ticketId']));
+$router->get('/events/{id}/checkin', fn($p) => TicketController::checkinForm($p['id']));
+$router->post('/events/{id}/checkin', fn($p) => TicketController::checkinSubmit($p['id']));
+
+// Contracts + e-signature
+$router->get('/contracts', fn() => ContractController::index());
+$router->get('/contracts/create', fn() => ContractController::create());
+$router->post('/contracts', fn() => ContractController::store());
+$router->get('/contracts/{id}', fn($p) => ContractController::show($p['id']));
+$router->post('/contracts/{id}/send', fn($p) => ContractController::send($p['id']));
+$router->post('/contracts/{id}/delete', fn($p) => ContractController::destroy($p['id']));
+
+// Documents
+$router->post('/documents', fn() => DocumentController::store());
+$router->get('/documents/{id}/download', fn($p) => DocumentController::download($p['id']));
+$router->post('/documents/{id}/delete', fn($p) => DocumentController::destroy($p['id']));
+
+// Purchase orders (fournisseurs)
+$router->get('/purchase-orders', fn() => PurchaseOrderController::index());
+$router->get('/purchase-orders/create', fn() => PurchaseOrderController::create());
+$router->post('/purchase-orders', fn() => PurchaseOrderController::store());
+$router->get('/purchase-orders/{id}', fn($p) => PurchaseOrderController::show($p['id']));
+$router->post('/purchase-orders/{id}/status', fn($p) => PurchaseOrderController::updateStatus($p['id']));
+$router->post('/purchase-orders/{id}/delete', fn($p) => PurchaseOrderController::destroy($p['id']));
+$router->get('/purchase-orders/{id}/print', fn($p) => PurchaseOrderController::printView($p['id']));
+
+// Equipment / stock
+$router->get('/equipment', fn() => EquipmentController::index());
+$router->get('/equipment/create', fn() => EquipmentController::create());
+$router->post('/equipment', fn() => EquipmentController::store());
+$router->get('/equipment/{id}/edit', fn($p) => EquipmentController::edit($p['id']));
+$router->post('/equipment/{id}', fn($p) => EquipmentController::update($p['id']));
+$router->post('/equipment/{id}/delete', fn($p) => EquipmentController::destroy($p['id']));
+$router->post('/events/{id}/equipment', fn($p) => EquipmentController::book($p['id']));
+$router->post('/events/{id}/equipment/{bookingId}/delete', fn($p) => EquipmentController::unbook($p['id'], $p['bookingId']));
+
+// Credit notes (avoirs)
+$router->post('/invoices/{id}/credit-notes', fn($p) => CreditNoteController::store($p['id']));
+$router->get('/credit-notes/{id}/print', fn($p) => CreditNoteController::printView($p['id']));
+
+// Recurring invoices
+$router->post('/invoices/{id}/recurring', fn($p) => InvoiceController::setRecurring($p['id']));
+$router->post('/invoices/{id}/generate-next', fn($p) => InvoiceController::generateNext($p['id']));
+
+// Jour-J : feuille de route, contacts d'urgence, incidents
+$router->get('/events/{id}/dayof', fn($p) => EventOpsController::index($p['id']));
+$router->post('/events/{id}/runsheet', fn($p) => EventOpsController::storeRunSheetItem($p['id']));
+$router->post('/events/{id}/runsheet/{itemId}/delete', fn($p) => EventOpsController::destroyRunSheetItem($p['id'], $p['itemId']));
+$router->post('/events/{id}/emergency-contacts', fn($p) => EventOpsController::storeEmergencyContact($p['id']));
+$router->post('/events/{id}/emergency-contacts/{contactId}/delete', fn($p) => EventOpsController::destroyEmergencyContact($p['id'], $p['contactId']));
+$router->post('/events/{id}/incidents', fn($p) => EventOpsController::storeIncident($p['id']));
+$router->post('/events/{id}/incidents/{incidentId}/status', fn($p) => EventOpsController::updateIncidentStatus($p['id'], $p['incidentId']));
+
+// Notes internes
+$router->post('/events/{id}/notes', fn($p) => NoteController::storeForEvent($p['id']));
+$router->post('/clients/{id}/notes', fn($p) => NoteController::storeForClient($p['id']));
+$router->post('/notes/{id}/delete', fn($p) => NoteController::destroy($p['id']));
+
+// Sondage de satisfaction
+$router->post('/events/{id}/survey/send', fn($p) => SurveyController::send($p['id']));
+
+// Portail client
+$router->post('/clients/{id}/portal-link', fn($p) => PortalController::generateLink($p['id']));
+
+// Reporting & exports
+$router->get('/reports', fn() => ReportController::index());
+$router->get('/export/invoices.csv', fn() => ExportController::invoicesCsv());
+$router->get('/export/clients.csv', fn() => ExportController::clientsCsv());
+
+// Journal d'activité
+$router->get('/settings/activity-log', fn() => SettingsController::activityLog());
+
+// Stripe (paiement en ligne optionnel)
+$router->post('/invoices/{id}/stripe-link', fn($p) => StripeController::createPaymentLink($p['id']));
+$router->get('/stripe/return/{id}', fn($p) => StripeController::handleReturn($p['id']));
+
+// --- Routes publiques (sans authentification) ---
+$router->get('/rsvp/{token}', fn($p) => GuestController::rsvpForm($p['token']));
+$router->post('/rsvp/{token}', fn($p) => GuestController::rsvpSubmit($p['token']));
+$router->get('/sign/{token}', fn($p) => ContractController::signForm($p['token']));
+$router->post('/sign/{token}', fn($p) => ContractController::signSubmit($p['token']));
+$router->get('/survey/{token}', fn($p) => SurveyController::form($p['token']));
+$router->post('/survey/{token}', fn($p) => SurveyController::submit($p['token']));
+$router->get('/portal/{token}', fn($p) => PortalController::show($p['token']));
+$router->get('/calendar/{token}.ics', fn($p) => CalendarController::feed($p['token']));
 
 return $router;

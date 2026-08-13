@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Csrf;
 use App\Core\Session;
 use App\Models\Invoice;
@@ -13,9 +14,11 @@ class PaymentController
     {
         Csrf::verifyOrFail();
 
+        $amount = (float) str_replace(',', '.', input('amount', '0'));
+
         Payment::create([
             'invoice_id' => (int) $invoiceId,
-            'amount' => (float) str_replace(',', '.', input('amount', '0')),
+            'amount' => $amount,
             'payment_date' => input('payment_date') ?: date('Y-m-d'),
             'method' => in_array(input('method'), ['virement', 'cb', 'especes', 'cheque', 'autre'], true) ? input('method') : 'virement',
             'reference' => input('reference', ''),
@@ -23,6 +26,7 @@ class PaymentController
         ]);
 
         Invoice::recalculatePaidStatus((int) $invoiceId);
+        ActivityLog::record('Paiement enregistré', 'invoice', (int) $invoiceId, (string) $amount);
         Session::flash('success', 'Paiement enregistré.');
         redirect('/invoices/' . $invoiceId);
     }

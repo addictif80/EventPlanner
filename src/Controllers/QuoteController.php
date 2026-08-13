@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Mailer;
@@ -9,6 +10,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Models\Client;
 use App\Models\CompanySettings;
+use App\Models\EmailTemplate;
 use App\Models\Event;
 use App\Models\Quote;
 
@@ -54,6 +56,7 @@ class QuoteController
         ]);
 
         Quote::replaceItems($id, $items);
+        ActivityLog::record('Création devis', 'quote', $id);
         Session::flash('success', 'Devis créé.');
         redirect('/quotes/' . $id);
     }
@@ -124,6 +127,7 @@ class QuoteController
         $status = input('status');
         if (in_array($status, ['draft', 'sent', 'accepted', 'refused', 'expired'], true)) {
             Quote::update((int) $id, ['status' => $status]);
+            ActivityLog::record('Changement statut devis', 'quote', (int) $id, $status);
             Session::flash('success', 'Statut du devis mis à jour.');
         }
         redirect('/quotes/' . $id);
@@ -141,13 +145,15 @@ class QuoteController
 
         $items = Quote::items((int) $id);
         $company = CompanySettings::get();
+        $template = EmailTemplate::get('quote');
+        $subject = str_replace('{number}', $quote['quote_number'], $template['subject'] ?? 'Votre devis {number}');
 
         ob_start();
-        View::render('quotes/email', ['quote' => $quote, 'items' => $items, 'company' => $company], layout: null);
+        View::render('quotes/email', ['quote' => $quote, 'items' => $items, 'company' => $company, 'intro' => $template['intro'] ?? null], layout: null);
         $html = ob_get_clean();
 
         try {
-            Mailer::send($quote['client_email'], 'Devis ' . $quote['quote_number'] . ' — ' . $company['company_name'], $html);
+            Mailer::send($quote['client_email'], $subject, $html);
             Quote::update((int) $id, ['status' => $quote['status'] === 'draft' ? 'sent' : $quote['status']]);
             Session::flash('success', 'Devis envoyé par email à ' . $quote['client_email']);
         } catch (\RuntimeException $e) {

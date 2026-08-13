@@ -20,6 +20,12 @@ $remaining = (float)$invoice['total'] - (float)$invoice['amount_paid'];
         <i class="bi bi-envelope"></i> Envoyer par email
       </button>
     </form>
+    <?php if (in_array($invoice['status'], ['sent', 'partially_paid', 'overdue'], true)): ?>
+    <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/remind') ?>" onsubmit="return confirm('Envoyer une relance de paiement au client ?');">
+      <?= csrf_field() ?>
+      <button class="btn btn-outline-warning btn-sm" <?= $smtpConfigured ? '' : 'disabled' ?>><i class="bi bi-bell"></i> Relancer</button>
+    </form>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -93,4 +99,59 @@ $remaining = (float)$invoice['total'] - (float)$invoice['amount_paid'];
       <?php if (empty($payments)): ?><tr><td colspan="5" class="text-muted small text-center py-3">Aucun paiement enregistré.</td></tr><?php endif; ?>
     </tbody>
   </table>
+
+  <?php if (!empty($stripeEnabled)): ?>
+  <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/stripe-link') ?>" class="mt-2">
+    <?= csrf_field() ?>
+    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-credit-card"></i> Générer un lien de paiement en ligne (Stripe)</button>
+  </form>
+  <?php if (!empty($stripePaymentUrl)): ?>
+    <div class="alert alert-info mt-2 mb-0">Lien de paiement : <a href="<?= View::e($stripePaymentUrl) ?>" target="_blank"><?= View::e($stripePaymentUrl) ?></a></div>
+  <?php endif; ?>
+  <?php endif; ?>
 </div></div>
+
+<div class="row g-3 mt-1">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Avoirs</h3>
+      <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/credit-notes') ?>" class="row g-2 mb-3">
+        <?= csrf_field() ?>
+        <div class="col-4"><input type="text" name="amount" class="form-control form-control-sm" placeholder="Montant" required></div>
+        <div class="col-6"><input type="text" name="reason" class="form-control form-control-sm" placeholder="Motif"></div>
+        <div class="col-2"><button class="btn btn-sm btn-outline-dark w-100">+</button></div>
+      </form>
+      <ul class="list-unstyled mb-0">
+        <?php foreach (($creditNotes ?? []) as $cn): ?>
+          <li class="py-1 border-bottom small"><a href="<?= url('/credit-notes/' . $cn['id'] . '/print') ?>" target="_blank"><?= View::e($cn['credit_note_number']) ?></a> — <?= View::money((float)$cn['amount']) ?> <?= View::e($cn['reason']) ?></li>
+        <?php endforeach; ?>
+        <?php if (empty($creditNotes)): ?><li class="text-muted small">Aucun avoir.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Facture récurrente</h3>
+      <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/recurring') ?>" class="d-flex align-items-center gap-2 mb-2">
+        <?= csrf_field() ?>
+        <div class="form-check">
+          <input type="checkbox" name="is_recurring" class="form-check-input" id="is_recurring" <?= !empty($invoice['is_recurring']) ? 'checked' : '' ?>>
+          <label class="form-check-label" for="is_recurring">Récurrente</label>
+        </div>
+        <select name="recurrence_interval" class="form-select form-select-sm" style="width:auto;">
+          <?php foreach (['monthly' => 'Mensuelle', 'quarterly' => 'Trimestrielle', 'yearly' => 'Annuelle'] as $val => $label): ?>
+            <option value="<?= $val ?>" <?= ($invoice['recurrence_interval'] ?? '') === $val ? 'selected' : '' ?>><?= $label ?></option>
+          <?php endforeach; ?>
+        </select>
+        <button class="btn btn-sm btn-outline-secondary">Enregistrer</button>
+      </form>
+      <?php if (!empty($invoice['is_recurring'])): ?>
+        <p class="small text-muted">Prochaine échéance prévue : <?= View::date($invoice['recurrence_next_date']) ?></p>
+        <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/generate-next') ?>">
+          <?= csrf_field() ?>
+          <button class="btn btn-sm btn-primary">Générer la prochaine facture maintenant</button>
+        </form>
+      <?php endif; ?>
+    </div></div>
+  </div>
+</div>

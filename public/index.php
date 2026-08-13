@@ -8,8 +8,17 @@ $router = require dirname(__DIR__) . '/src/routes.php';
 
 $path = $router->normalizedPath($_SERVER['REQUEST_URI'] ?? '/');
 $publicPaths = ['/login', '/logout'];
+$publicPrefixes = ['/rsvp/', '/sign/', '/survey/', '/portal/', '/calendar/'];
 
-if (!in_array($path, $publicPaths, true)) {
+$isPublic = in_array($path, $publicPaths, true);
+foreach ($publicPrefixes as $prefix) {
+    if (str_starts_with($path, $prefix)) {
+        $isPublic = true;
+        break;
+    }
+}
+
+if (!$isPublic) {
     Auth::requireLogin();
 }
 

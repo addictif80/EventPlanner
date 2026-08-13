@@ -1,23 +1,28 @@
 # EventPlanner
 
-Panel de gestion pour organisateur d'événements : clients, événements, prestataires,
-lieux, catalogue, devis, factures, paiements, tâches et paramètres — avec envoi
-d'emails (devis/factures) via un **serveur SMTP personnalisable**.
+Panel complet de gestion pour organisateur d'événements (tous types : mariages,
+corporate, festivals, anniversaires...) : clients, événements, invités/RSVP,
+billetterie, prestataires, lieux, matériel, devis, factures, avoirs, contrats
+avec signature électronique, jour-J, portail client, reporting — avec envoi
+d'emails via un **serveur SMTP personnalisable**.
 
-Stack : PHP 8.1+ / MySQL (MariaDB) / Bootstrap 5. Aucune dépendance Composer
-requise (autoloader et client SMTP maison) pour rester simple à déployer sur
-de l'hébergement mutualisé type CyberPanel.
+Stack : PHP 8.1+ / MySQL (MariaDB) / Bootstrap 5 / Chart.js (CDN). Aucune
+dépendance Composer requise (autoloader, client SMTP et intégration Stripe
+maison via cURL) pour rester simple à déployer sur de l'hébergement mutualisé
+type CyberPanel.
 
 ## Structure
 
 ```
 public/          Racine web (front controller index.php, assets)
-src/Core/        Framework maison (routeur, DB, Auth, Mailer/SMTP, vues...)
+src/Core/        Framework maison (routeur, DB, Auth, Mailer/SMTP, ActivityLog...)
 src/Controllers/ Contrôleurs
 src/Models/      Modèles (PDO)
 views/           Vues PHP (Bootstrap 5)
-database/        schema.sql (structure complète de la base)
-bin/             Scripts CLI (création du premier admin)
+database/        schema.sql (structure complète, install neuve)
+database/migrations/  Migrations incrémentales (mise à jour d'une install existante)
+bin/             Scripts CLI (création admin, cron facturation récurrente, relances)
+storage/uploads/ Documents uploadés (hors du docroot public/)
 config/          Configuration (.env)
 ```
 
@@ -102,26 +107,95 @@ email de test »** permet de vérifier la configuration immédiatement.
 Le client SMTP est implémenté nativement (`src/Core/SmtpClient.php`), sans
 dépendance externe.
 
-## Fonctionnalités couvertes (V1)
+### Mise à jour d'une installation existante
 
-- Authentification, gestion des utilisateurs et rôles (admin/manager/staff)
-- Clients (CRM) : fiches, recherche, historique événements/devis/factures
-- Événements : fiche complète, checklist de tâches, prestataires liés
-- Prestataires, lieux, catalogue de produits/prestations
-- Devis : lignes dynamiques, calcul auto, statuts, envoi par email, impression
-  PDF (impression navigateur), conversion en facture
-- Factures : lignes dynamiques, paiements multiples, statut auto (payée /
-  partiellement payée / en retard), envoi par email, impression PDF
-- Tableau de bord : indicateurs clés (CA encaissé, impayés, événements à
-  venir, devis en attente)
-- Paramètres entreprise (coordonnées, TVA, préfixes de numérotation, pied de
-  page facture) et paramètres SMTP
+Si vous avez déjà une base EventPlanner en production, n'importez pas
+`schema.sql` (il recréerait tout) : appliquez uniquement la migration
+incrémentale correspondante, par exemple :
 
-## Pistes d'évolution (V2)
+```bash
+mysql -u <db_user> -p <db_name> < database/migrations/002_advanced_features.sql
+```
 
-- Billetterie / gestion d'invités et RSVP pour les événements grand public
-- Signature électronique des devis/contrats
-- Export comptable (CSV) et rapports avancés
-- Plans de salle / seating chart
-- Application mobile / mode hors-ligne jour J
-- Portail client en libre-service
+### Tâches planifiées (cron) recommandées
+
+```cron
+# Relance automatique des factures en retard, tous les jours à 9h
+0 9 * * * php /chemin/vers/EventPlanner/bin/send_overdue_reminders.php
+
+# Génération des prochaines échéances de factures récurrentes, tous les jours à 6h
+0 6 * * * php /chemin/vers/EventPlanner/bin/generate_recurring_invoices.php
+```
+
+## Fonctionnalités couvertes
+
+### Clients & CRM
+Fiches client (particulier/entreprise), recherche, tags, notes internes,
+historique complet (événements, devis, factures, documents), **portail client
+en libre-service** (lien magique sans mot de passe, accès lecture seule).
+
+### Événements
+Fiche complète (type, lieu, budget, invités), checklist de tâches assignables,
+prestataires liés avec coût, matériel réservé (avec détection de conflit de
+stock par date), documents attachés, notes internes.
+
+### Invités, RSVP & billetterie
+Gestion des invités par événement, envoi d'invitations par email avec lien de
+confirmation **RSVP public** (sans compte requis), plans de table simples
+(tables + capacité + placement), catégories de billets, génération de billets
+avec code unique, **page de check-in** pour le contrôle d'accès jour J.
+
+### Devis & factures
+Lignes dynamiques, calcul automatique, numérotation configurable, statuts,
+envoi par email (modèles personnalisables), impression PDF (impression
+navigateur), conversion devis → facture, paiements multiples, statut auto
+(payée / partielle / en retard), **avoirs**, **factures récurrentes** (avec
+script cron de génération automatique), **paiement en ligne Stripe optionnel**
+(lien Checkout généré via l'API Stripe en cURL — nécessite vos propres clés).
+
+### Prestataires & fournisseurs
+Répertoire de prestataires, **bons de commande** avec lignes et impression,
+**gestion de stock matériel** avec réservation par événement et détection de
+surbooking.
+
+### Contrats & documents
+Génération de contrats depuis un modèle éditable, envoi pour **signature
+électronique** (page publique avec capture de signature manuscrite + nom +
+IP + horodatage, sans dépendance externe type DocuSign), gestion documentaire
+(upload/téléchargement) attachée aux clients et événements.
+
+### Jour-J
+Feuille de route horaire, liste de contacts d'urgence, journal d'incidents —
+pages optimisées mobile pour l'équipe sur le terrain.
+
+### Communication
+Notes internes (par client/événement), modèles d'emails éditables (devis,
+facture, relance), relance manuelle ou automatique (cron) des impayés,
+sondage de satisfaction post-événement (lien public).
+
+### Reporting & administration
+Tableau de bord (CA, impayés, devis en attente, événements à venir),
+page Rapports avec graphiques (CA par mois/type d'événement, top clients,
+top prestataires, taux de conversion des devis, prévisionnel de trésorerie),
+export CSV comptable des factures, journal d'activité (audit log),
+gestion des utilisateurs et rôles (admin/manager/staff).
+
+### Intégrations
+- **SMTP personnalisable** pour tous les envois d'emails
+- **Flux calendrier ICS** abonnable (Google Calendar, Outlook, Apple Calendar)
+- **Stripe** (paiement en ligne, optionnel, clés à fournir dans Paramètres)
+- **Export CSV** des emails clients pour un outil d'emailing externe (Mailchimp...)
+
+## Choix pragmatiques sur les intégrations tierces
+
+Certains outils du marché (DocuSign, Twilio SMS, synchronisation OAuth
+Google Calendar, Mailchimp API) nécessitent vos propres comptes/clés
+développeur payants. Pour rester utilisable immédiatement sans configuration
+tierce, ce panel propose des équivalents fonctionnels maison :
+signature électronique intégrée (au lieu de DocuSign), flux ICS abonnable
+(au lieu d'une synchro OAuth Google Calendar), export CSV (au lieu de l'API
+Mailchimp). Le paiement Stripe est la seule intégration tierce câblée
+nativement (via cURL, sans SDK), à activer avec vos propres clés API.
+
+Non couvert dans cette version : application mobile native (l'interface est
+responsive et utilisable sur mobile), envoi de SMS.

@@ -69,3 +69,35 @@
     </div></div>
   </div>
 </div>
+
+<div class="row g-3 mt-1">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h3 class="h6">Notes internes</h3>
+      <form method="post" action="<?= url('/clients/' . $client['id'] . '/notes') ?>" class="d-flex gap-2 mb-3">
+        <?= csrf_field() ?>
+        <input type="text" name="body" class="form-control form-control-sm" placeholder="Ajouter une note..." required>
+        <button class="btn btn-sm btn-primary">+</button>
+      </form>
+      <ul class="list-unstyled mb-0">
+        <?php foreach (($notes ?? []) as $n): ?>
+          <li class="py-1 border-bottom small"><?= View::e($n['body']) ?> <span class="text-muted">— <?= View::e($n['author_name'] ?? '') ?>, <?= View::date($n['created_at'], 'd/m/Y H:i') ?></span></li>
+        <?php endforeach; ?>
+        <?php if (empty($notes)): ?><li class="text-muted small">Aucune note.</li><?php endif; ?>
+      </ul>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <?php $clientId = $client['id']; include __DIR__ . '/../partials/documents.php'; ?>
+  </div>
+</div>
+
+<div class="mt-3">
+  <form method="post" action="<?= url('/clients/' . $client['id'] . '/portal-link') ?>">
+    <?= csrf_field() ?>
+    <button class="btn btn-sm btn-outline-dark"><i class="bi bi-link-45deg"></i> Générer un lien portail client</button>
+  </form>
+  <?php if (!empty($portalLink)): ?>
+    <div class="alert alert-info mt-2 mb-0">Lien à transmettre au client (valable 30 jours) : <a href="<?= View::e($portalLink) ?>"><?= View::e($portalLink) ?></a></div>
+  <?php endif; ?>
+</div>

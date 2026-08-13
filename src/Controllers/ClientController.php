@@ -2,11 +2,13 @@
 
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Client;
+use App\Models\Document;
 
 class ClientController
 {
@@ -27,6 +29,7 @@ class ClientController
         Csrf::verifyOrFail();
         $data = self::validated();
         $id = Client::create($data);
+        ActivityLog::record('Création client', 'client', $id, $data['company_name'] ?: trim($data['first_name'] . ' ' . $data['last_name']));
         Session::flash('success', 'Client créé avec succès.');
         redirect('/clients/' . $id);
     }
@@ -53,13 +56,21 @@ class ClientController
         $stmt->execute([$id]);
         $invoices = $stmt->fetchAll();
 
+        $stmt = $pdo->prepare('SELECT n.*, u.name AS author_name FROM event_notes n LEFT JOIN users u ON u.id = n.user_id WHERE n.client_id = ? ORDER BY n.created_at DESC');
+        $stmt->execute([$id]);
+        $notes = $stmt->fetchAll();
+
         View::render('clients/show', [
             'title' => Client::displayName($client),
             'client' => $client,
             'events' => $events,
             'quotes' => $quotes,
             'invoices' => $invoices,
+            'documents' => Document::forClient((int) $id),
+            'notes' => $notes,
+            'portalLink' => $_SESSION['portal_link_' . $id] ?? null,
         ]);
+        unset($_SESSION['portal_link_' . $id]);
     }
 
     public static function edit(string $id): void
@@ -77,6 +88,7 @@ class ClientController
         Csrf::verifyOrFail();
         $data = self::validated();
         Client::update((int) $id, $data);
+        ActivityLog::record('Modification client', 'client', (int) $id);
         Session::flash('success', 'Client mis à jour.');
         redirect('/clients/' . $id);
     }
@@ -85,6 +97,7 @@ class ClientController
     {
         Csrf::verifyOrFail();
         Client::delete((int) $id);
+        ActivityLog::record('Suppression client', 'client', (int) $id);
         Session::flash('success', 'Client supprimé.');
         redirect('/clients');
     }

@@ -2,11 +2,14 @@
 
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Client;
+use App\Models\Document;
+use App\Models\Equipment;
 use App\Models\Event;
 use App\Models\EventType;
 use App\Models\Provider;
@@ -37,6 +40,7 @@ class EventController
         $data = self::validated();
         $data['created_by'] = \App\Core\Auth::id();
         $id = Event::create($data);
+        ActivityLog::record('Création événement', 'event', $id, $data['title']);
         Session::flash('success', 'Événement créé.');
         redirect('/events/' . $id);
     }
@@ -68,6 +72,10 @@ class EventController
         $stmt->execute();
         $users = $stmt->fetchAll();
 
+        $stmt = $pdo->prepare('SELECT n.*, u.name AS author_name FROM event_notes n LEFT JOIN users u ON u.id = n.user_id WHERE n.event_id = ? ORDER BY n.created_at DESC');
+        $stmt->execute([$id]);
+        $notes = $stmt->fetchAll();
+
         View::render('events/show', [
             'title' => $event['title'],
             'event' => $event,
@@ -77,6 +85,10 @@ class EventController
             'quotes' => $quotes,
             'invoices' => $invoices,
             'users' => $users,
+            'documents' => Document::forEvent((int) $id),
+            'equipmentBookings' => Equipment::bookingsForEvent((int) $id),
+            'equipmentList' => Equipment::all('name ASC'),
+            'notes' => $notes,
         ]);
     }
 
@@ -99,6 +111,7 @@ class EventController
     {
         Csrf::verifyOrFail();
         Event::update((int) $id, self::validated());
+        ActivityLog::record('Modification événement', 'event', (int) $id);
         Session::flash('success', 'Événement mis à jour.');
         redirect('/events/' . $id);
     }
@@ -107,6 +120,7 @@ class EventController
     {
         Csrf::verifyOrFail();
         Event::delete((int) $id);
+        ActivityLog::record('Suppression événement', 'event', (int) $id);
         Session::flash('success', 'Événement supprimé.');
         redirect('/events');
     }

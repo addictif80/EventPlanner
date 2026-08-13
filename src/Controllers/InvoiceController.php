@@ -2,12 +2,15 @@
 
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Csrf;
 use App\Core\Mailer;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\Client;
 use App\Models\CompanySettings;
+use App\Models\CreditNote;
+use App\Models\EmailTemplate;
 use App\Models\Event;
 use App\Models\Invoice;
 
@@ -53,6 +56,7 @@ class InvoiceController
         ]);
 
         Invoice::replaceItems($id, $items);
+        ActivityLog::record('Création facture', 'invoice', $id);
         Session::flash('success', 'Facture créée.');
         redirect('/invoices/' . $id);
     }
@@ -67,8 +71,73 @@ class InvoiceController
             'invoice' => $invoice,
             'items' => Invoice::items((int) $id),
             'payments' => Invoice::payments((int) $id),
+            'creditNotes' => CreditNote::forInvoice((int) $id),
             'smtpConfigured' => Mailer::isConfigured(),
+            'stripeEnabled' => !empty(CompanySettings::get()['stripe_secret_key']),
+            'stripePaymentUrl' => $_SESSION['stripe_payment_url_' . $id] ?? null,
         ]);
+        unset($_SESSION['stripe_payment_url_' . $id]);
+    }
+
+    public static function setRecurring(string $id): void
+    {
+        Csrf::verifyOrFail();
+        $isRecurring = input('is_recurring') ? 1 : 0;
+        $interval = in_array(input('recurrence_interval'), ['monthly', 'quarterly', 'yearly'], true) ? input('recurrence_interval') : null;
+
+        $nextDate = null;
+        if ($isRecurring && $interval) {
+            $map = ['monthly' => '+1 month', 'quarterly' => '+3 months', 'yearly' => '+1 year'];
+            $nextDate = date('Y-m-d', strtotime($map[$interval]));
+        }
+
+        Invoice::update((int) $id, [
+            'is_recurring' => $isRecurring,
+            'recurrence_interval' => $interval,
+            'recurrence_next_date' => $nextDate,
+        ]);
+
+        Session::flash('success', 'Paramètres de récurrence mis à jour.');
+        redirect('/invoices/' . $id);
+    }
+
+    public static function generateNext(string $id): void
+    {
+        Csrf::verifyOrFail();
+        $invoice = Invoice::find((int) $id);
+        if (!$invoice) { http_response_code(404); die('Facture introuvable.'); }
+
+        $items = Invoice::items((int) $id);
+        $number = Invoice::nextNumber();
+
+        $newId = Invoice::create([
+            'invoice_number' => $number,
+            'quote_id' => $invoice['quote_id'],
+            'client_id' => $invoice['client_id'],
+            'event_id' => $invoice['event_id'],
+            'type' => $invoice['type'],
+            'status' => 'draft',
+            'issue_date' => date('Y-m-d'),
+            'due_date' => date('Y-m-d', strtotime('+30 days')),
+            'subtotal' => $invoice['subtotal'],
+            'tax_rate' => $invoice['tax_rate'],
+            'tax_amount' => $invoice['tax_amount'],
+            'total' => $invoice['total'],
+            'notes' => $invoice['notes'],
+            'is_recurring' => $invoice['is_recurring'],
+            'recurrence_interval' => $invoice['recurrence_interval'],
+            'recurrence_parent_id' => $invoice['id'],
+        ]);
+
+        Invoice::replaceItems($newId, $items);
+
+        if (!empty($invoice['recurrence_interval'])) {
+            $map = ['monthly' => '+1 month', 'quarterly' => '+3 months', 'yearly' => '+1 year'];
+            Invoice::update((int) $id, ['recurrence_next_date' => date('Y-m-d', strtotime($map[$invoice['recurrence_interval']]))]);
+        }
+
+        Session::flash('success', 'Nouvelle échéance générée : ' . $number);
+        redirect('/invoices/' . $newId);
     }
 
     public static function edit(string $id): void
@@ -132,17 +201,47 @@ class InvoiceController
 
         $items = Invoice::items((int) $id);
         $company = CompanySettings::get();
+        $template = EmailTemplate::get('invoice');
+        $subject = str_replace('{number}', $invoice['invoice_number'], $template['subject'] ?? 'Votre facture {number}');
 
         ob_start();
-        View::render('invoices/email', ['invoice' => $invoice, 'items' => $items, 'company' => $company], layout: null);
+        View::render('invoices/email', ['invoice' => $invoice, 'items' => $items, 'company' => $company, 'intro' => $template['intro'] ?? null], layout: null);
         $html = ob_get_clean();
 
         try {
-            Mailer::send($invoice['client_email'], 'Facture ' . $invoice['invoice_number'] . ' — ' . $company['company_name'], $html);
+            Mailer::send($invoice['client_email'], $subject, $html);
             if ($invoice['status'] === 'draft') {
                 \App\Models\Invoice::update((int) $id, ['status' => 'sent']);
             }
             Session::flash('success', 'Facture envoyée par email à ' . $invoice['client_email']);
+        } catch (\RuntimeException $e) {
+            Session::flash('error', "Échec de l'envoi : " . $e->getMessage());
+        }
+
+        redirect('/invoices/' . $id);
+    }
+
+    public static function sendReminder(string $id): void
+    {
+        Csrf::verifyOrFail();
+        $invoice = Invoice::findWithRelations((int) $id);
+
+        if (!$invoice || empty($invoice['client_email'])) {
+            Session::flash('error', "Impossible d'envoyer : le client n'a pas d'adresse email renseignée.");
+            redirect('/invoices/' . $id);
+        }
+
+        $company = CompanySettings::get();
+        $template = EmailTemplate::get('reminder');
+        $subject = str_replace('{number}', $invoice['invoice_number'], $template['subject'] ?? 'Rappel — facture {number} en attente de paiement');
+
+        ob_start();
+        View::render('invoices/reminder_email', ['invoice' => $invoice, 'company' => $company, 'intro' => $template['intro'] ?? null], layout: null);
+        $html = ob_get_clean();
+
+        try {
+            Mailer::send($invoice['client_email'], $subject, $html);
+            Session::flash('success', 'Relance envoyée à ' . $invoice['client_email']);
         } catch (\RuntimeException $e) {
             Session::flash('error', "Échec de l'envoi : " . $e->getMessage());
         }
