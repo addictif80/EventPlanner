@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Model;
 
@@ -14,20 +15,21 @@ class Ticket extends Model
         $stmt = Database::connection()->prepare(
             'SELECT t.*, tc.name AS category_name, tc.event_id
              FROM tickets t JOIN ticket_categories tc ON tc.id = t.ticket_category_id
-             WHERE tc.event_id = ? ORDER BY t.created_at DESC'
+             WHERE tc.event_id = ? AND t.organization_id = ? ORDER BY t.created_at DESC'
         );
-        $stmt->execute([$eventId]);
+        $stmt->execute([$eventId, Auth::organizationId()]);
         return $stmt->fetchAll();
     }
 
+    /** Scoped to the current organization: used for authenticated check-in. */
     public static function findByCode(string $code): ?array
     {
         $stmt = Database::connection()->prepare(
             'SELECT t.*, tc.name AS category_name, tc.event_id
              FROM tickets t JOIN ticket_categories tc ON tc.id = t.ticket_category_id
-             WHERE t.code = ? LIMIT 1'
+             WHERE t.code = ? AND t.organization_id = ? LIMIT 1'
         );
-        $stmt->execute([$code]);
+        $stmt->execute([$code, Auth::organizationId()]);
         return $stmt->fetch() ?: null;
     }
 

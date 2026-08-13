@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Cron script: sends a payment reminder email for every overdue invoice.
- * Suggested crontab (daily at 9am):
+ * Cron script: sends a payment reminder email for every overdue invoice,
+ * across every organization. Suggested crontab (daily at 9am):
  *   0 9 * * * php /path/to/EventPlanner/bin/send_overdue_reminders.php
  */
 
@@ -20,18 +20,26 @@ if (PHP_SAPI !== 'cli') {
 }
 
 $pdo = Database::connection();
-$ids = $pdo->query("SELECT id FROM invoices WHERE status = 'overdue'")->fetchAll(\PDO::FETCH_COLUMN);
+$rows = $pdo->query("SELECT id, organization_id FROM invoices WHERE status = 'overdue'")->fetchAll();
 
-$company = CompanySettings::get();
-$template = EmailTemplate::get('reminder');
 $sent = 0;
 
-foreach ($ids as $id) {
-    $invoice = Invoice::findWithRelations((int) $id);
+foreach ($rows as $row) {
+    $id = (int) $row['id'];
+
+    // This script runs outside any HTTP session and spans every organization,
+    // so each iteration manually sets the tenant scope that Auth::organizationId()
+    // (and therefore every scoped Model:: call below, plus Mailer's SMTP lookup)
+    // reads from.
+    $_SESSION['organization_id'] = (int) $row['organization_id'];
+
+    $invoice = Invoice::findWithRelations($id);
     if (!$invoice || empty($invoice['client_email'])) {
         continue;
     }
 
+    $company = CompanySettings::get();
+    $template = EmailTemplate::get('reminder');
     $subject = str_replace('{number}', $invoice['invoice_number'], $template['subject'] ?? 'Rappel — facture {number} en attente de paiement');
 
     ob_start();

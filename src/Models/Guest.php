@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Model;
 
@@ -13,9 +14,9 @@ class Guest extends Model
     {
         $stmt = Database::connection()->prepare(
             'SELECT g.*, t.name AS table_name FROM guests g LEFT JOIN event_tables t ON t.id = g.table_id
-             WHERE g.event_id = ? ORDER BY g.last_name ASC, g.first_name ASC'
+             WHERE g.event_id = ? AND g.organization_id = ? ORDER BY g.last_name ASC, g.first_name ASC'
         );
-        $stmt->execute([$eventId]);
+        $stmt->execute([$eventId, Auth::organizationId()]);
         return $stmt->fetchAll();
     }
 

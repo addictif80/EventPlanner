@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\ActivityLog;
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
@@ -43,21 +44,22 @@ class ClientController
         }
 
         $pdo = Database::connection();
+        $orgId = Auth::organizationId();
 
-        $stmt = $pdo->prepare('SELECT * FROM events WHERE client_id = ? ORDER BY event_date DESC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT * FROM events WHERE client_id = ? AND organization_id = ? ORDER BY event_date DESC');
+        $stmt->execute([$id, $orgId]);
         $events = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT * FROM quotes WHERE client_id = ? ORDER BY issue_date DESC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT * FROM quotes WHERE client_id = ? AND organization_id = ? ORDER BY issue_date DESC');
+        $stmt->execute([$id, $orgId]);
         $quotes = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT * FROM invoices WHERE client_id = ? ORDER BY issue_date DESC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT * FROM invoices WHERE client_id = ? AND organization_id = ? ORDER BY issue_date DESC');
+        $stmt->execute([$id, $orgId]);
         $invoices = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT n.*, u.name AS author_name FROM event_notes n LEFT JOIN users u ON u.id = n.user_id WHERE n.client_id = ? ORDER BY n.created_at DESC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT n.*, u.name AS author_name FROM event_notes n LEFT JOIN users u ON u.id = n.user_id WHERE n.client_id = ? AND n.organization_id = ? ORDER BY n.created_at DESC');
+        $stmt->execute([$id, $orgId]);
         $notes = $stmt->fetchAll();
 
         View::render('clients/show', [

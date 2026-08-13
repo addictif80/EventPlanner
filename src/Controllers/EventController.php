@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\ActivityLog;
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
@@ -51,29 +52,30 @@ class EventController
         if (!$event) { http_response_code(404); die('Événement introuvable.'); }
 
         $pdo = Database::connection();
+        $orgId = Auth::organizationId();
 
-        $stmt = $pdo->prepare('SELECT * FROM tasks WHERE event_id = ? ORDER BY (status = "done"), due_date ASC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT * FROM tasks WHERE event_id = ? AND organization_id = ? ORDER BY (status = "done"), due_date ASC');
+        $stmt->execute([$id, $orgId]);
         $tasks = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT ep.*, p.name AS provider_name, p.category FROM event_providers ep JOIN providers p ON p.id = ep.provider_id WHERE ep.event_id = ?');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT ep.*, p.name AS provider_name, p.category FROM event_providers ep JOIN providers p ON p.id = ep.provider_id WHERE ep.event_id = ? AND ep.organization_id = ?');
+        $stmt->execute([$id, $orgId]);
         $eventProviders = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT * FROM quotes WHERE event_id = ? ORDER BY issue_date DESC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT * FROM quotes WHERE event_id = ? AND organization_id = ? ORDER BY issue_date DESC');
+        $stmt->execute([$id, $orgId]);
         $quotes = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT * FROM invoices WHERE event_id = ? ORDER BY issue_date DESC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT * FROM invoices WHERE event_id = ? AND organization_id = ? ORDER BY issue_date DESC');
+        $stmt->execute([$id, $orgId]);
         $invoices = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT id, name FROM users WHERE is_active = 1 ORDER BY name');
-        $stmt->execute();
+        $stmt = $pdo->prepare('SELECT id, name FROM users WHERE is_active = 1 AND organization_id = ? ORDER BY name');
+        $stmt->execute([$orgId]);
         $users = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT n.*, u.name AS author_name FROM event_notes n LEFT JOIN users u ON u.id = n.user_id WHERE n.event_id = ? ORDER BY n.created_at DESC');
-        $stmt->execute([$id]);
+        $stmt = $pdo->prepare('SELECT n.*, u.name AS author_name FROM event_notes n LEFT JOIN users u ON u.id = n.user_id WHERE n.event_id = ? AND n.organization_id = ? ORDER BY n.created_at DESC');
+        $stmt->execute([$id, $orgId]);
         $notes = $stmt->fetchAll();
 
         View::render('events/show', [
@@ -128,10 +130,17 @@ class EventController
     public static function attachProvider(string $id): void
     {
         Csrf::verifyOrFail();
+
+        if (!Event::find((int) $id) || !Provider::find((int) input('provider_id'))) {
+            http_response_code(404);
+            die('Introuvable.');
+        }
+
         $stmt = Database::connection()->prepare(
-            'INSERT INTO event_providers (event_id, provider_id, cost, status, notes) VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO event_providers (organization_id, event_id, provider_id, cost, status, notes) VALUES (?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
+            Auth::organizationId(),
             (int) $id,
             (int) input('provider_id'),
             input('cost') !== '' ? (float) str_replace(',', '.', input('cost')) : null,
@@ -145,8 +154,8 @@ class EventController
     public static function detachProvider(string $id, string $providerLinkId): void
     {
         Csrf::verifyOrFail();
-        $stmt = Database::connection()->prepare('DELETE FROM event_providers WHERE id = ? AND event_id = ?');
-        $stmt->execute([(int) $providerLinkId, (int) $id]);
+        $stmt = Database::connection()->prepare('DELETE FROM event_providers WHERE id = ? AND event_id = ? AND organization_id = ?');
+        $stmt->execute([(int) $providerLinkId, (int) $id, Auth::organizationId()]);
         Session::flash('success', 'Prestataire retiré de l\'événement.');
         redirect('/events/' . $id);
     }

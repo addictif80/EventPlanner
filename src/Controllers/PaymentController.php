@@ -14,6 +14,11 @@ class PaymentController
     {
         Csrf::verifyOrFail();
 
+        if (!Invoice::find((int) $invoiceId)) {
+            http_response_code(404);
+            die('Facture introuvable.');
+        }
+
         $amount = (float) str_replace(',', '.', input('amount', '0'));
 
         Payment::create([

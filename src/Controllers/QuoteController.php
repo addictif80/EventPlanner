@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\ActivityLog;
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Mailer;
@@ -183,17 +184,22 @@ class QuoteController
 
         $items = Quote::items((int) $id);
         $pdo = Database::connection();
-        $prefix = $pdo->query('SELECT invoice_prefix FROM company_settings WHERE id = 1')->fetchColumn() ?: 'FAC-';
+        $orgId = Auth::organizationId();
+
+        $stmt = $pdo->prepare('SELECT invoice_prefix FROM company_settings WHERE organization_id = ?');
+        $stmt->execute([$orgId]);
+        $prefix = $stmt->fetchColumn() ?: 'FAC-';
         $year = date('Y');
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM invoices WHERE invoice_number LIKE ?');
-        $stmt->execute([$prefix . $year . '-%']);
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM invoices WHERE invoice_number LIKE ? AND organization_id = ?');
+        $stmt->execute([$prefix . $year . '-%', $orgId]);
         $number = sprintf('%s%s-%03d', $prefix, $year, (int) $stmt->fetchColumn() + 1);
 
         $invoiceStmt = $pdo->prepare(
-            'INSERT INTO invoices (invoice_number, quote_id, client_id, event_id, type, status, issue_date, due_date, subtotal, tax_rate, tax_amount, total, notes)
-             VALUES (?, ?, ?, ?, "standalone", "draft", ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO invoices (organization_id, invoice_number, quote_id, client_id, event_id, type, status, issue_date, due_date, subtotal, tax_rate, tax_amount, total, notes)
+             VALUES (?, ?, ?, ?, ?, "standalone", "draft", ?, ?, ?, ?, ?, ?, ?)'
         );
         $invoiceStmt->execute([
+            $orgId,
             $number,
             $quote['id'],
             $quote['client_id'],
@@ -208,9 +214,9 @@ class QuoteController
         ]);
         $invoiceId = (int) $pdo->lastInsertId();
 
-        $itemStmt = $pdo->prepare('INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total, position) VALUES (?, ?, ?, ?, ?, ?)');
+        $itemStmt = $pdo->prepare('INSERT INTO invoice_items (organization_id, invoice_id, description, quantity, unit_price, total, position) VALUES (?, ?, ?, ?, ?, ?, ?)');
         foreach ($items as $i => $item) {
-            $itemStmt->execute([$invoiceId, $item['description'], $item['quantity'], $item['unit_price'], $item['total'], $i]);
+            $itemStmt->execute([$orgId, $invoiceId, $item['description'], $item['quantity'], $item['unit_price'], $item['total'], $i]);
         }
 
         Session::flash('success', 'Facture ' . $number . ' générée à partir du devis.');

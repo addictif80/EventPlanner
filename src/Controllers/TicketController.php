@@ -28,6 +28,7 @@ class TicketController
     public static function storeCategory(string $eventId): void
     {
         Csrf::verifyOrFail();
+        if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
         TicketCategory::create([
             'event_id' => (int) $eventId,
             'name' => input('name', ''),
@@ -50,6 +51,7 @@ class TicketController
     {
         Csrf::verifyOrFail();
         $categoryId = (int) input('ticket_category_id');
+        if (!TicketCategory::find($categoryId)) { http_response_code(404); die('Catégorie introuvable.'); }
 
         Ticket::create([
             'ticket_category_id' => $categoryId,

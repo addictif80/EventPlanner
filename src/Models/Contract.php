@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Model;
 
@@ -13,8 +14,11 @@ class Contract extends Model
     {
         $sql = 'SELECT c.*, cl.first_name, cl.last_name, cl.company_name
                 FROM contracts c LEFT JOIN clients cl ON cl.id = c.client_id
+                WHERE c.organization_id = ?
                 ORDER BY c.created_at DESC';
-        return Database::connection()->query($sql)->fetchAll();
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute([Auth::organizationId()]);
+        return $stmt->fetchAll();
     }
 
     public static function findWithRelations(int $id): ?array
@@ -23,9 +27,9 @@ class Contract extends Model
                 FROM contracts c
                 LEFT JOIN clients cl ON cl.id = c.client_id
                 LEFT JOIN events e ON e.id = c.event_id
-                WHERE c.id = ? LIMIT 1';
+                WHERE c.id = ? AND c.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
-        $stmt->execute([$id]);
+        $stmt->execute([$id, Auth::organizationId()]);
         return $stmt->fetch() ?: null;
     }
 

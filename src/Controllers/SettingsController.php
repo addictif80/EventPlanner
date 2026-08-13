@@ -17,7 +17,8 @@ class SettingsController
     {
         Auth::requireAdmin();
 
-        $stmt = Database::connection()->query('SELECT * FROM smtp_settings WHERE id = 1');
+        $stmt = Database::connection()->prepare('SELECT * FROM smtp_settings WHERE organization_id = ?');
+        $stmt->execute([Auth::organizationId()]);
         $smtp = $stmt->fetch() ?: [];
 
         View::render('settings/index', [
@@ -57,9 +58,10 @@ class SettingsController
     {
         Auth::requireAdmin();
 
-        $stmt = Database::connection()->query(
-            'SELECT al.*, u.name AS user_name FROM activity_log al LEFT JOIN users u ON u.id = al.user_id ORDER BY al.created_at DESC LIMIT 200'
+        $stmt = Database::connection()->prepare(
+            'SELECT al.*, u.name AS user_name FROM activity_log al LEFT JOIN users u ON u.id = al.user_id WHERE al.organization_id = ? ORDER BY al.created_at DESC LIMIT 200'
         );
+        $stmt->execute([Auth::organizationId()]);
 
         View::render('settings/activity_log', ['title' => "Journal d'activité", 'logs' => $stmt->fetchAll()]);
     }
@@ -100,10 +102,11 @@ class SettingsController
         $password = input('password', '');
 
         $pdo = Database::connection();
+        $orgId = Auth::organizationId();
         if ($password === '') {
             // Keep the previously stored password if the field is left blank.
             $stmt = $pdo->prepare(
-                'UPDATE smtp_settings SET host = ?, port = ?, encryption = ?, username = ?, from_email = ?, from_name = ?, is_configured = 1 WHERE id = 1'
+                'UPDATE smtp_settings SET host = ?, port = ?, encryption = ?, username = ?, from_email = ?, from_name = ?, is_configured = 1 WHERE organization_id = ?'
             );
             $stmt->execute([
                 input('host', ''),
@@ -112,10 +115,11 @@ class SettingsController
                 input('username', ''),
                 input('from_email', ''),
                 input('from_name', ''),
+                $orgId,
             ]);
         } else {
             $stmt = $pdo->prepare(
-                'UPDATE smtp_settings SET host = ?, port = ?, encryption = ?, username = ?, password = ?, from_email = ?, from_name = ?, is_configured = 1 WHERE id = 1'
+                'UPDATE smtp_settings SET host = ?, port = ?, encryption = ?, username = ?, password = ?, from_email = ?, from_name = ?, is_configured = 1 WHERE organization_id = ?'
             );
             $stmt->execute([
                 input('host', ''),
@@ -125,6 +129,7 @@ class SettingsController
                 $password,
                 input('from_email', ''),
                 input('from_name', ''),
+                $orgId,
             ]);
         }
 

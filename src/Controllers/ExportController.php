@@ -2,19 +2,23 @@
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Database;
 
 class ExportController
 {
     public static function invoicesCsv(): void
     {
-        $rows = Database::connection()->query(
+        $stmt = Database::connection()->prepare(
             "SELECT i.invoice_number, i.issue_date, i.due_date, i.status,
                     COALESCE(NULLIF(c.company_name, ''), CONCAT(c.first_name, ' ', c.last_name)) AS client,
                     i.subtotal, i.tax_rate, i.tax_amount, i.total, i.amount_paid, (i.total - i.amount_paid) AS remaining
              FROM invoices i JOIN clients c ON c.id = i.client_id
+             WHERE i.organization_id = ?
              ORDER BY i.issue_date ASC"
-        )->fetchAll();
+        );
+        $stmt->execute([Auth::organizationId()]);
+        $rows = $stmt->fetchAll();
 
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="factures_export.csv"');
@@ -36,10 +40,12 @@ class ExportController
 
     public static function clientsCsv(): void
     {
-        $rows = Database::connection()->query(
+        $stmt = Database::connection()->prepare(
             "SELECT COALESCE(NULLIF(company_name, ''), CONCAT(first_name, ' ', last_name)) AS name, email, phone, city, tags
-             FROM clients WHERE email != '' ORDER BY name ASC"
-        )->fetchAll();
+             FROM clients WHERE email != '' AND organization_id = ? ORDER BY name ASC"
+        );
+        $stmt->execute([Auth::organizationId()]);
+        $rows = $stmt->fetchAll();
 
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="clients_export.csv"');

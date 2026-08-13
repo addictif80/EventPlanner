@@ -1,10 +1,18 @@
 # EventPlanner
 
-Panel complet de gestion pour organisateur d'événements (tous types : mariages,
-corporate, festivals, anniversaires...) : clients, événements, invités/RSVP,
-billetterie, prestataires, lieux, matériel, devis, factures, avoirs, contrats
-avec signature électronique, jour-J, portail client, reporting — avec envoi
-d'emails via un **serveur SMTP personnalisable**.
+Panel complet **multi-tenant** de gestion pour organisateurs d'événements
+(tous types : mariages, corporate, festivals, anniversaires...) : clients,
+événements, invités/RSVP, billetterie, prestataires, lieux, matériel, devis,
+factures, avoirs, contrats avec signature électronique, jour-J, portail
+client, reporting — avec envoi d'emails via un **serveur SMTP
+personnalisable**.
+
+**Multi-tenant** : chaque organisateur (agence, cabinet...) crée son propre
+espace via `/register` — sa propre équipe (rôles admin/manager/staff), ses
+propres clients, catalogue, devis, factures, paramètres SMTP, numérotation...
+Les organisations sont complètement cloisonnées : aucun utilisateur ne peut
+voir ni modifier les données d'une autre organisation, y compris par accès
+direct à une URL (voir « Isolation multi-tenant » plus bas).
 
 Stack : PHP 8.1+ / MySQL (MariaDB) / Bootstrap 5 / Chart.js (CDN). Aucune
 dépendance Composer requise (autoloader, client SMTP et intégration Stripe
@@ -68,14 +76,24 @@ DB_PASS=...
 APP_KEY=<chaîne aléatoire>
 ```
 
-### 4. Créer le premier compte administrateur
+### 4. Créer votre organisation
 
-Via SSH sur la VM :
+Deux options :
+
+- **Self-service** : rendez-vous sur `https://votre-domaine.tld/register` et
+  créez votre organisation + compte administrateur directement depuis le
+  navigateur (c'est la voie normale pour chaque nouvel organisateur).
+- **Via SSH** (utile pour le tout premier déploiement ou un script
+  d'installation automatisé) :
 
 ```bash
 cd /chemin/vers/EventPlanner
-php bin/create_admin.php "Votre Nom" vous@example.com VotreMotDePasse
+php bin/create_admin.php "Nom de l'agence" "Votre Nom" vous@example.com VotreMotDePasse
 ```
+
+Chaque appel (self-service ou CLI) crée une **nouvelle organisation**
+indépendante avec son propre catalogue, ses propres paramètres SMTP/entreprise
+et sa numérotation de devis/factures repartant à 001.
 
 ### 5. Permissions
 
@@ -110,12 +128,19 @@ dépendance externe.
 ### Mise à jour d'une installation existante
 
 Si vous avez déjà une base EventPlanner en production, n'importez pas
-`schema.sql` (il recréerait tout) : appliquez uniquement la migration
-incrémentale correspondante, par exemple :
+`schema.sql` (il recréerait tout) : appliquez les migrations incrémentales
+manquantes, dans l'ordre :
 
 ```bash
 mysql -u <db_user> -p <db_name> < database/migrations/002_advanced_features.sql
+mysql -u <db_user> -p <db_name> < database/migrations/003_multi_tenant.sql
 ```
+
+La migration `003` (passage au multi-tenant) regroupe toutes vos données
+existantes dans une organisation « Mon organisation » unique — voir le
+commentaire en tête du fichier avant de l'exécuter. Si votre base ne contient
+que des données de test, il est plus simple de repartir d'une base vide avec
+`schema.sql`.
 
 ### Tâches planifiées (cron) recommandées
 
@@ -199,3 +224,33 @@ nativement (via cURL, sans SDK), à activer avec vos propres clés API.
 
 Non couvert dans cette version : application mobile native (l'interface est
 responsive et utilisable sur mobile), envoi de SMS.
+
+## Isolation multi-tenant
+
+Toutes les tables métier portent une colonne `organization_id`. L'isolation
+est appliquée à deux niveaux :
+
+1. **`App\Core\Model`** (classe de base de tous les modèles) filtre
+   automatiquement `find()`, `all()`, `where()`, `count()`, `update()` et
+   `delete()` par `organization_id = Auth::organizationId()`, et l'injecte
+   automatiquement sur `create()`.
+2. **Requêtes SQL manuelles** (jointures, agrégats de rapports, exports...) :
+   chacune a été auditée pour ajouter explicitement `AND organization_id = ?`.
+
+Les routes **publiques** (RSVP invité, signature de contrat, sondage de
+satisfaction, portail client, flux ICS, retour de paiement Stripe) n'ont pas
+de session utilisateur : l'organisation y est retrouvée via le jeton unique
+de l'URL (ou les métadonnées de la session Stripe), jamais via
+`Auth::organizationId()`.
+
+Les scripts cron (`bin/send_overdue_reminders.php`,
+`bin/generate_recurring_invoices.php`) tournent hors contexte HTTP et
+parcourent toutes les organisations : chaque itération positionne
+manuellement le contexte d'organisation courant avant d'appeler les modèles
+scopés.
+
+Cette isolation a été testée bout en bout avec deux organisations distinctes
+(clients, événements, devis avec numérotation indépendante, documents,
+export CSV, utilisateurs, flux ICS, portail client, RSVP) : tout accès direct
+d'une organisation aux données d'une autre renvoie une 404, et aucune liste
+ou export ne mélange les deux.

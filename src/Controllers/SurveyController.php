@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Mailer;
@@ -17,8 +18,8 @@ class SurveyController
         $event = Event::find((int) $eventId);
         if (!$event) { http_response_code(404); die('Événement introuvable.'); }
 
-        $stmt = Database::connection()->prepare('SELECT * FROM clients WHERE id = ?');
-        $stmt->execute([$event['client_id']]);
+        $stmt = Database::connection()->prepare('SELECT * FROM clients WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$event['client_id'], Auth::organizationId()]);
         $client = $stmt->fetch();
 
         if (!$client || empty($client['email'])) {
@@ -28,9 +29,9 @@ class SurveyController
 
         $token = bin2hex(random_bytes(24));
         $stmt = Database::connection()->prepare(
-            'INSERT INTO satisfaction_surveys (event_id, client_id, token, sent_at) VALUES (?, ?, ?, NOW())'
+            'INSERT INTO satisfaction_surveys (organization_id, event_id, client_id, token, sent_at) VALUES (?, ?, ?, ?, NOW())'
         );
-        $stmt->execute([$eventId, $client['id'], $token]);
+        $stmt->execute([Auth::organizationId(), $eventId, $client['id'], $token]);
 
         $link = (($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . url('/survey/' . $token));
         $html = '<p>Bonjour,</p><p>Merci d\'avoir fait confiance à notre équipe pour l\'organisation de « ' . View::e($event['title']) . ' ».</p>'

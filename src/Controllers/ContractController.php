@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Mailer;
 use App\Core\Session;
 use App\Core\View;
@@ -40,6 +41,7 @@ class ContractController
     public static function store(): void
     {
         Csrf::verifyOrFail();
+        if (!Client::find((int) input('client_id'))) { http_response_code(404); die('Client introuvable.'); }
         $id = Contract::create([
             'client_id' => (int) input('client_id'),
             'event_id' => input('event_id') !== '' ? (int) input('event_id') : null,
@@ -123,13 +125,13 @@ class ContractController
             redirect('/sign/' . $token);
         }
 
-        Contract::update((int) $contract['id'], [
-            'status' => 'signed',
-            'signer_name' => $signerName,
-            'signature_data' => $signatureData,
-            'signer_ip' => $_SERVER['REMOTE_ADDR'] ?? '',
-            'signed_at' => date('Y-m-d H:i:s'),
-        ]);
+        // Public, unauthenticated action: bypass the tenant-scoped Model::update()
+        // and target the row directly — its identity was already established
+        // via the signing token.
+        $stmt = Database::connection()->prepare(
+            'UPDATE contracts SET status = "signed", signer_name = ?, signature_data = ?, signer_ip = ?, signed_at = NOW() WHERE id = ?'
+        );
+        $stmt->execute([$signerName, $signatureData, $_SERVER['REMOTE_ADDR'] ?? '', $contract['id']]);
 
         View::render('contracts/sign_thanks', ['contract' => $contract], layout: null);
     }

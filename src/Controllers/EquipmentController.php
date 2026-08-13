@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
@@ -65,9 +66,11 @@ class EquipmentController
     {
         Csrf::verifyOrFail();
 
-        $stmt = Database::connection()->prepare('SELECT event_date FROM events WHERE id = ?');
-        $stmt->execute([$eventId]);
+        $stmt = Database::connection()->prepare('SELECT event_date FROM events WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$eventId, Auth::organizationId()]);
         $eventDate = $stmt->fetchColumn();
+
+        if (!$eventDate) { http_response_code(404); die('Événement introuvable.'); }
 
         $equipmentId = (int) input('equipment_id');
         $quantity = (int) input('quantity', 1);
@@ -80,8 +83,8 @@ class EquipmentController
             redirect('/events/' . $eventId);
         }
 
-        $stmt = Database::connection()->prepare('INSERT INTO equipment_bookings (equipment_id, event_id, quantity, notes) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$equipmentId, (int) $eventId, $quantity, input('notes', '')]);
+        $stmt = Database::connection()->prepare('INSERT INTO equipment_bookings (organization_id, equipment_id, event_id, quantity, notes) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([Auth::organizationId(), $equipmentId, (int) $eventId, $quantity, input('notes', '')]);
 
         Session::flash('success', 'Matériel réservé pour cet événement.');
         redirect('/events/' . $eventId);
@@ -90,7 +93,8 @@ class EquipmentController
     public static function unbook(string $eventId, string $bookingId): void
     {
         Csrf::verifyOrFail();
-        Database::connection()->prepare('DELETE FROM equipment_bookings WHERE id = ? AND event_id = ?')->execute([$bookingId, $eventId]);
+        Database::connection()->prepare('DELETE FROM equipment_bookings WHERE id = ? AND event_id = ? AND organization_id = ?')
+            ->execute([$bookingId, $eventId, Auth::organizationId()]);
         Session::flash('success', 'Réservation de matériel supprimée.');
         redirect('/events/' . $eventId);
     }

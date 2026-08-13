@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Model;
 
@@ -15,8 +16,11 @@ class Event extends Model
                 FROM events e
                 LEFT JOIN clients c ON c.id = e.client_id
                 LEFT JOIN event_types et ON et.id = e.event_type_id
+                WHERE e.organization_id = ?
                 ORDER BY e.event_date DESC';
-        return Database::connection()->query($sql)->fetchAll();
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute([Auth::organizationId()]);
+        return $stmt->fetchAll();
     }
 
     public static function findWithRelations(int $id): ?array
@@ -27,9 +31,9 @@ class Event extends Model
                 LEFT JOIN clients c ON c.id = e.client_id
                 LEFT JOIN event_types et ON et.id = e.event_type_id
                 LEFT JOIN venues v ON v.id = e.venue_id
-                WHERE e.id = ? LIMIT 1';
+                WHERE e.id = ? AND e.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
-        $stmt->execute([$id]);
+        $stmt->execute([$id, Auth::organizationId()]);
         return $stmt->fetch() ?: null;
     }
 
@@ -37,8 +41,10 @@ class Event extends Model
     {
         $sql = 'SELECT e.*, c.first_name, c.last_name, c.company_name
                 FROM events e LEFT JOIN clients c ON c.id = e.client_id
-                WHERE e.event_date >= CURDATE() AND e.status != "cancelled"
+                WHERE e.event_date >= CURDATE() AND e.status != "cancelled" AND e.organization_id = ?
                 ORDER BY e.event_date ASC LIMIT ' . (int) $limit;
-        return Database::connection()->query($sql)->fetchAll();
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute([Auth::organizationId()]);
+        return $stmt->fetchAll();
     }
 }

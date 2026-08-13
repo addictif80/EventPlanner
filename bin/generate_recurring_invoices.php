@@ -17,15 +17,22 @@ if (PHP_SAPI !== 'cli') {
 
 $pdo = Database::connection();
 $stmt = $pdo->query(
-    "SELECT id FROM invoices WHERE is_recurring = 1 AND recurrence_next_date IS NOT NULL AND recurrence_next_date <= CURDATE()"
+    "SELECT id, organization_id FROM invoices WHERE is_recurring = 1 AND recurrence_next_date IS NOT NULL AND recurrence_next_date <= CURDATE()"
 );
-$ids = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+$rows = $stmt->fetchAll();
 
 $map = ['monthly' => '+1 month', 'quarterly' => '+3 months', 'yearly' => '+1 year'];
 $generated = 0;
 
-foreach ($ids as $id) {
-    $invoice = Invoice::find((int) $id);
+foreach ($rows as $row) {
+    $id = (int) $row['id'];
+
+    // This script runs outside any HTTP session and spans every organization,
+    // so each iteration manually sets the tenant scope that Auth::organizationId()
+    // (and therefore every scoped Model:: call below) reads from.
+    $_SESSION['organization_id'] = (int) $row['organization_id'];
+
+    $invoice = Invoice::find($id);
     if (!$invoice) {
         continue;
     }

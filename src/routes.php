@@ -30,6 +30,7 @@ use App\Controllers\ReportController;
 use App\Controllers\ExportController;
 use App\Controllers\CalendarController;
 use App\Controllers\StripeController;
+use App\Controllers\RegisterController;
 
 $router = new Router();
 
@@ -37,6 +38,8 @@ $router = new Router();
 $router->get('/login', fn() => AuthController::showLogin());
 $router->post('/login', fn() => AuthController::login());
 $router->get('/logout', fn() => AuthController::logout());
+$router->get('/register', fn() => RegisterController::show());
+$router->post('/register', fn() => RegisterController::register());
 
 // --- Everything below requires authentication ---
 // (enforced in public/index.php before dispatch, based on the request path,

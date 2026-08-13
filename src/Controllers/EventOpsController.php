@@ -17,17 +17,18 @@ class EventOpsController
         if (!$event) { http_response_code(404); die('Événement introuvable.'); }
 
         $pdo = Database::connection();
+        $orgId = Auth::organizationId();
 
-        $stmt = $pdo->prepare('SELECT * FROM run_sheet_items WHERE event_id = ? ORDER BY time_slot ASC, position ASC');
-        $stmt->execute([$eventId]);
+        $stmt = $pdo->prepare('SELECT * FROM run_sheet_items WHERE event_id = ? AND organization_id = ? ORDER BY time_slot ASC, position ASC');
+        $stmt->execute([$eventId, $orgId]);
         $runSheet = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT * FROM emergency_contacts WHERE event_id = ? ORDER BY id ASC');
-        $stmt->execute([$eventId]);
+        $stmt = $pdo->prepare('SELECT * FROM emergency_contacts WHERE event_id = ? AND organization_id = ? ORDER BY id ASC');
+        $stmt->execute([$eventId, $orgId]);
         $emergencyContacts = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT i.*, u.name AS reporter_name FROM incidents i LEFT JOIN users u ON u.id = i.reported_by WHERE i.event_id = ? ORDER BY i.created_at DESC');
-        $stmt->execute([$eventId]);
+        $stmt = $pdo->prepare('SELECT i.*, u.name AS reporter_name FROM incidents i LEFT JOIN users u ON u.id = i.reported_by WHERE i.event_id = ? AND i.organization_id = ? ORDER BY i.created_at DESC');
+        $stmt->execute([$eventId, $orgId]);
         $incidents = $stmt->fetchAll();
 
         View::render('event_ops/index', [
@@ -42,10 +43,12 @@ class EventOpsController
     public static function storeRunSheetItem(string $eventId): void
     {
         Csrf::verifyOrFail();
+        if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
+
         $stmt = Database::connection()->prepare(
-            'INSERT INTO run_sheet_items (event_id, time_slot, title, responsible, notes) VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO run_sheet_items (organization_id, event_id, time_slot, title, responsible, notes) VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$eventId, input('time_slot') ?: null, input('title', ''), input('responsible', ''), input('notes', '')]);
+        $stmt->execute([Auth::organizationId(), $eventId, input('time_slot') ?: null, input('title', ''), input('responsible', ''), input('notes', '')]);
         Session::flash('success', 'Étape ajoutée à la feuille de route.');
         redirect('/events/' . $eventId . '/dayof');
     }
@@ -53,17 +56,20 @@ class EventOpsController
     public static function destroyRunSheetItem(string $eventId, string $itemId): void
     {
         Csrf::verifyOrFail();
-        Database::connection()->prepare('DELETE FROM run_sheet_items WHERE id = ? AND event_id = ?')->execute([$itemId, $eventId]);
+        Database::connection()->prepare('DELETE FROM run_sheet_items WHERE id = ? AND event_id = ? AND organization_id = ?')
+            ->execute([$itemId, $eventId, Auth::organizationId()]);
         redirect('/events/' . $eventId . '/dayof');
     }
 
     public static function storeEmergencyContact(string $eventId): void
     {
         Csrf::verifyOrFail();
+        if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
+
         $stmt = Database::connection()->prepare(
-            'INSERT INTO emergency_contacts (event_id, name, role, phone, notes) VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO emergency_contacts (organization_id, event_id, name, role, phone, notes) VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$eventId, input('name', ''), input('role', ''), input('phone', ''), input('notes', '')]);
+        $stmt->execute([Auth::organizationId(), $eventId, input('name', ''), input('role', ''), input('phone', ''), input('notes', '')]);
         Session::flash('success', 'Contact d\'urgence ajouté.');
         redirect('/events/' . $eventId . '/dayof');
     }
@@ -71,17 +77,21 @@ class EventOpsController
     public static function destroyEmergencyContact(string $eventId, string $contactId): void
     {
         Csrf::verifyOrFail();
-        Database::connection()->prepare('DELETE FROM emergency_contacts WHERE id = ? AND event_id = ?')->execute([$contactId, $eventId]);
+        Database::connection()->prepare('DELETE FROM emergency_contacts WHERE id = ? AND event_id = ? AND organization_id = ?')
+            ->execute([$contactId, $eventId, Auth::organizationId()]);
         redirect('/events/' . $eventId . '/dayof');
     }
 
     public static function storeIncident(string $eventId): void
     {
         Csrf::verifyOrFail();
+        if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
+
         $stmt = Database::connection()->prepare(
-            'INSERT INTO incidents (event_id, title, description, severity, status, reported_by) VALUES (?, ?, ?, ?, "open", ?)'
+            'INSERT INTO incidents (organization_id, event_id, title, description, severity, status, reported_by) VALUES (?, ?, ?, ?, ?, "open", ?)'
         );
         $stmt->execute([
+            Auth::organizationId(),
             $eventId,
             input('title', ''),
             input('description', ''),
@@ -96,7 +106,8 @@ class EventOpsController
     {
         Csrf::verifyOrFail();
         $status = in_array(input('status'), ['open', 'resolved'], true) ? input('status') : 'open';
-        Database::connection()->prepare('UPDATE incidents SET status = ? WHERE id = ? AND event_id = ?')->execute([$status, $incidentId, $eventId]);
+        Database::connection()->prepare('UPDATE incidents SET status = ? WHERE id = ? AND event_id = ? AND organization_id = ?')
+            ->execute([$status, $incidentId, $eventId, Auth::organizationId()]);
         redirect('/events/' . $eventId . '/dayof');
     }
 }

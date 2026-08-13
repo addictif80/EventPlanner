@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Mailer;
@@ -29,6 +30,7 @@ class GuestController
     public static function store(string $eventId): void
     {
         Csrf::verifyOrFail();
+        if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
         Guest::create([
             'event_id' => (int) $eventId,
             'first_name' => input('first_name', ''),
@@ -46,8 +48,8 @@ class GuestController
     public static function update(string $id): void
     {
         Csrf::verifyOrFail();
-        $stmt = Database::connection()->prepare('SELECT event_id FROM guests WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = Database::connection()->prepare('SELECT event_id FROM guests WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
         $eventId = $stmt->fetchColumn();
 
         Guest::update((int) $id, [
@@ -68,8 +70,8 @@ class GuestController
     public static function destroy(string $id): void
     {
         Csrf::verifyOrFail();
-        $stmt = Database::connection()->prepare('SELECT event_id FROM guests WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = Database::connection()->prepare('SELECT event_id FROM guests WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
         $eventId = $stmt->fetchColumn();
 
         Guest::delete((int) $id);
@@ -80,8 +82,8 @@ class GuestController
     public static function sendInvite(string $id): void
     {
         Csrf::verifyOrFail();
-        $stmt = Database::connection()->prepare('SELECT * FROM guests WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = Database::connection()->prepare('SELECT * FROM guests WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
         $guest = $stmt->fetch();
 
         if (!$guest || empty($guest['email'])) {
@@ -122,11 +124,17 @@ class GuestController
         $guest = Guest::findByToken($token);
         if (!$guest) { http_response_code(404); die('Lien invalide ou expiré.'); }
 
-        Guest::update((int) $guest['id'], [
-            'rsvp_status' => in_array(input('rsvp_status'), ['confirmed', 'declined'], true) ? input('rsvp_status') : 'pending',
-            'plus_ones' => (int) input('plus_ones', 0),
-            'dietary_notes' => input('dietary_notes', ''),
-            'responded_at' => date('Y-m-d H:i:s'),
+        // Public, unauthenticated action: no organization session exists here,
+        // so we bypass the tenant-scoped Model::update() and target the row
+        // directly — its identity was already established via the RSVP token.
+        $stmt = Database::connection()->prepare(
+            'UPDATE guests SET rsvp_status = ?, plus_ones = ?, dietary_notes = ?, responded_at = NOW() WHERE id = ?'
+        );
+        $stmt->execute([
+            in_array(input('rsvp_status'), ['confirmed', 'declined'], true) ? input('rsvp_status') : 'pending',
+            (int) input('plus_ones', 0),
+            input('dietary_notes', ''),
+            $guest['id'],
         ]);
 
         View::render('guests/rsvp_thanks', [], layout: null);
@@ -135,6 +143,7 @@ class GuestController
     public static function storeTable(string $eventId): void
     {
         Csrf::verifyOrFail();
+        if (!Event::find((int) $eventId)) { http_response_code(404); die('Événement introuvable.'); }
         EventTable::create([
             'event_id' => (int) $eventId,
             'name' => input('name', ''),

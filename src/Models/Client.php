@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Model;
 
@@ -12,10 +13,10 @@ class Client extends Model
     public static function search(string $term): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT * FROM clients WHERE first_name LIKE ? OR last_name LIKE ? OR company_name LIKE ? OR email LIKE ? ORDER BY created_at DESC'
+            'SELECT * FROM clients WHERE organization_id = ? AND (first_name LIKE ? OR last_name LIKE ? OR company_name LIKE ? OR email LIKE ?) ORDER BY created_at DESC'
         );
         $like = '%' . $term . '%';
-        $stmt->execute([$like, $like, $like, $like]);
+        $stmt->execute([Auth::organizationId(), $like, $like, $like, $like]);
         return $stmt->fetchAll();
     }
 

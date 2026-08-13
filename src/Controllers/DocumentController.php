@@ -64,8 +64,8 @@ class DocumentController
 
     public static function download(string $id): void
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM documents WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = Database::connection()->prepare('SELECT * FROM documents WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
         $doc = $stmt->fetch();
 
         if (!$doc) { http_response_code(404); die('Document introuvable.'); }
@@ -84,8 +84,8 @@ class DocumentController
     {
         Csrf::verifyOrFail();
 
-        $stmt = Database::connection()->prepare('SELECT * FROM documents WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = Database::connection()->prepare('SELECT * FROM documents WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
         $doc = $stmt->fetch();
 
         if ($doc) {

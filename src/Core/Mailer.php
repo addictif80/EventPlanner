@@ -6,7 +6,8 @@ class Mailer
 {
     public static function settings(): array
     {
-        $stmt = Database::connection()->query('SELECT * FROM smtp_settings WHERE id = 1');
+        $stmt = Database::connection()->prepare('SELECT * FROM smtp_settings WHERE organization_id = ?');
+        $stmt->execute([Auth::organizationId()]);
         return $stmt->fetch() ?: [];
     }
 

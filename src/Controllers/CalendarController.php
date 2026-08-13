@@ -3,23 +3,30 @@
 namespace App\Controllers;
 
 use App\Core\Database;
-use App\Models\CompanySettings;
 
 class CalendarController
 {
     public static function feed(string $token): void
     {
-        $company = CompanySettings::get();
-        if (empty($company['ics_feed_token']) || !hash_equals($company['ics_feed_token'], $token)) {
+        // Public, unauthenticated route: no Auth session exists here, so the
+        // organization is resolved directly from the ICS token itself rather
+        // than from CompanySettings::get() (which relies on the current session).
+        $stmt = Database::connection()->prepare('SELECT organization_id FROM company_settings WHERE ics_feed_token = ? LIMIT 1');
+        $stmt->execute([$token]);
+        $orgId = $stmt->fetchColumn();
+
+        if (!$orgId) {
             http_response_code(404);
             die('Flux invalide.');
         }
 
-        $events = Database::connection()->query(
+        $stmt = Database::connection()->prepare(
             "SELECT e.*, COALESCE(NULLIF(c.company_name, ''), CONCAT(c.first_name, ' ', c.last_name)) AS client_name
              FROM events e LEFT JOIN clients c ON c.id = e.client_id
-             WHERE e.status != 'cancelled'"
-        )->fetchAll();
+             WHERE e.status != 'cancelled' AND e.organization_id = ?"
+        );
+        $stmt->execute([$orgId]);
+        $events = $stmt->fetchAll();
 
         header('Content-Type: text/calendar; charset=UTF-8');
         header('Content-Disposition: inline; filename="eventplanner.ics"');

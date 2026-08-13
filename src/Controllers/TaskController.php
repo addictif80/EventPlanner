@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
@@ -28,8 +29,8 @@ class TaskController
     public static function updateStatus(string $id): void
     {
         Csrf::verifyOrFail();
-        $stmt = Database::connection()->prepare('SELECT event_id FROM tasks WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = Database::connection()->prepare('SELECT event_id FROM tasks WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
         $eventId = $stmt->fetchColumn();
 
         Task::update((int) $id, ['status' => input('status', 'todo')]);
@@ -39,8 +40,8 @@ class TaskController
     public static function destroy(string $id): void
     {
         Csrf::verifyOrFail();
-        $stmt = Database::connection()->prepare('SELECT event_id FROM tasks WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = Database::connection()->prepare('SELECT event_id FROM tasks WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
         $eventId = $stmt->fetchColumn();
 
         Task::delete((int) $id);

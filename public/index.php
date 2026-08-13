@@ -7,8 +7,8 @@ require dirname(__DIR__) . '/src/bootstrap.php';
 $router = require dirname(__DIR__) . '/src/routes.php';
 
 $path = $router->normalizedPath($_SERVER['REQUEST_URI'] ?? '/');
-$publicPaths = ['/login', '/logout'];
-$publicPrefixes = ['/rsvp/', '/sign/', '/survey/', '/portal/', '/calendar/'];
+$publicPaths = ['/login', '/logout', '/register'];
+$publicPrefixes = ['/rsvp/', '/sign/', '/survey/', '/portal/', '/calendar/', '/stripe/return/'];
 
 $isPublic = in_array($path, $publicPaths, true);
 foreach ($publicPrefixes as $prefix) {

@@ -14,13 +14,18 @@ class Auth
         return $_SESSION['user_id'] ?? null;
     }
 
+    public static function organizationId(): ?int
+    {
+        return $_SESSION['organization_id'] ?? null;
+    }
+
     public static function user(): ?array
     {
         if (!self::check()) {
             return null;
         }
         if (!isset($_SESSION['user_cache'])) {
-            $stmt = Database::connection()->prepare('SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1');
+            $stmt = Database::connection()->prepare('SELECT id, organization_id, name, email, role FROM users WHERE id = ? LIMIT 1');
             $stmt->execute([self::id()]);
             $_SESSION['user_cache'] = $stmt->fetch() ?: null;
         }
@@ -44,13 +49,20 @@ class Auth
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = (int) $user['id'];
-            unset($_SESSION['user_cache']);
+            self::login((int) $user['id'], (int) $user['organization_id']);
             return true;
         }
 
         return false;
+    }
+
+    /** Establishes the session for a given user, e.g. after login or self-service registration. */
+    public static function login(int $userId, int $organizationId): void
+    {
+        session_regenerate_id(true);
+        $_SESSION['user_id'] = $userId;
+        $_SESSION['organization_id'] = $organizationId;
+        unset($_SESSION['user_cache']);
     }
 
     public static function logout(): void

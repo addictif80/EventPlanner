@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Model;
 
@@ -11,8 +12,8 @@ class CreditNote extends Model
 
     public static function forInvoice(int $invoiceId): array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM credit_notes WHERE invoice_id = ? ORDER BY issue_date DESC');
-        $stmt->execute([$invoiceId]);
+        $stmt = Database::connection()->prepare('SELECT * FROM credit_notes WHERE invoice_id = ? AND organization_id = ? ORDER BY issue_date DESC');
+        $stmt->execute([$invoiceId, Auth::organizationId()]);
         return $stmt->fetchAll();
     }
 
@@ -20,8 +21,8 @@ class CreditNote extends Model
     {
         $pdo = Database::connection();
         $year = date('Y');
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM credit_notes WHERE credit_note_number LIKE ?');
-        $stmt->execute(['AV-' . $year . '-%']);
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM credit_notes WHERE credit_note_number LIKE ? AND organization_id = ?');
+        $stmt->execute(['AV-' . $year . '-%', Auth::organizationId()]);
         return sprintf('AV-%s-%03d', $year, (int) $stmt->fetchColumn() + 1);
     }
 
@@ -31,9 +32,9 @@ class CreditNote extends Model
                 FROM credit_notes cn
                 JOIN invoices i ON i.id = cn.invoice_id
                 JOIN clients c ON c.id = cn.client_id
-                WHERE cn.id = ? LIMIT 1';
+                WHERE cn.id = ? AND cn.organization_id = ? LIMIT 1';
         $stmt = Database::connection()->prepare($sql);
-        $stmt->execute([$id]);
+        $stmt->execute([$id, Auth::organizationId()]);
         return $stmt->fetch() ?: null;
     }
 }
