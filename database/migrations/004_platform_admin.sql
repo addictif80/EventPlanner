@@ -3,10 +3,10 @@
 -- migrations 002/003 déjà appliquées).
 
 ALTER TABLE organizations
-    ADD COLUMN status ENUM('active', 'suspended') NOT NULL DEFAULT 'active';
+    ADD COLUMN IF NOT EXISTS status ENUM('active', 'suspended') NOT NULL DEFAULT 'active';
 
 ALTER TABLE users
-    ADD COLUMN is_super_admin TINYINT(1) NOT NULL DEFAULT 0;
+    ADD COLUMN IF NOT EXISTS is_super_admin TINYINT(1) NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS system_settings (
     id INT UNSIGNED PRIMARY KEY DEFAULT 1,

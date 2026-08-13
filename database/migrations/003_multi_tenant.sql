@@ -1,6 +1,10 @@
--- Bascule d'une installation EventPlanner mono-tenant existante vers le
--- multi-tenant : crée une organisation "Migration" qui récupère toutes les
--- données existantes, puis ajoute organization_id partout.
+-- @manual-only : NE PAS exécuter automatiquement (App\Core\Migrator ignore
+-- ce fichier). Bascule d'une installation EventPlanner mono-tenant existante
+-- vers le multi-tenant : crée une organisation "Migration" qui récupère
+-- toutes les données existantes, puis ajoute organization_id partout. C'est
+-- une opération destructive et non rejouable (elle supprime des clés
+-- primaires, restructure des tables et déplace des données) : elle doit
+-- rester une action manuelle et délibérée, jamais automatique.
 --
 -- ATTENTION : si votre base ne contient pas encore de données réelles
 -- (installation de test/développement), il est bien plus simple de repartir

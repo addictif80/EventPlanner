@@ -133,22 +133,37 @@ dépendance externe.
 
 ### Mise à jour d'une installation existante
 
-Si vous avez déjà une base EventPlanner en production, n'importez pas
-`schema.sql` (il recréerait tout) : appliquez les migrations incrémentales
-manquantes, dans l'ordre :
+La plupart des migrations (`002`, `004`, `005`, et toute future migration
+purement additive) **s'appliquent automatiquement toutes seules** : au
+premier chargement de page après un déploiement, `App\Core\Migrator`
+détecte les fichiers de `database/migrations/` pas encore joués (table de
+suivi `schema_migrations`), les exécute, et journalise le résultat. Rien à
+faire manuellement dans le cas courant — pas besoin de SSH ni de `mysql`.
+Deux workers PHP qui démarrent en même temps ne se marchent pas dessus
+(verrou MySQL `GET_LOCK` le temps de la migration), et un échec (ex. compte
+MySQL sans droit `ALTER`) est journalisé sans faire planter le site : la page
+qui a besoin de la table manquante affichera son erreur habituelle jusqu'à
+ce que le problème de droits soit corrigé.
+
+**Seule exception : `003_multi_tenant.sql`.** Cette migration est
+destructive et non rejouable (elle supprime des clés primaires, restructure
+des tables et déplace toutes les données existantes dans une organisation
+« Mon organisation » unique) : elle porte un marqueur `@manual-only` que le
+migrateur automatique ignore volontairement, et doit être lancée à la main,
+en connaissance de cause :
 
 ```bash
-mysql -u <db_user> -p <db_name> < database/migrations/002_advanced_features.sql
 mysql -u <db_user> -p <db_name> < database/migrations/003_multi_tenant.sql
-mysql -u <db_user> -p <db_name> < database/migrations/004_platform_admin.sql
-mysql -u <db_user> -p <db_name> < database/migrations/005_billing.sql
 ```
 
-La migration `003` (passage au multi-tenant) regroupe toutes vos données
-existantes dans une organisation « Mon organisation » unique — voir le
-commentaire en tête du fichier avant de l'exécuter. Si votre base ne contient
-que des données de test, il est plus simple de repartir d'une base vide avec
-`schema.sql`.
+Voir le commentaire en tête du fichier avant de l'exécuter. Si votre base ne
+contient que des données de test, il est plus simple de repartir d'une base
+vide avec `schema.sql` (qui contient déjà la structure multi-tenant à jour,
+migration `003` incluse).
+
+Le compte MySQL utilisé par l'application doit avoir les droits `CREATE`,
+`ALTER` et `INDEX` sur sa base (c'est le cas par défaut du compte dédié
+qu'un site CyberPanel crée pour sa base de données).
 
 ### Tâches planifiées (cron) recommandées
 

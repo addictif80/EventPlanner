@@ -4,9 +4,9 @@
 -- 002/003/004 déjà appliquées).
 
 ALTER TABLE system_settings
-    ADD COLUMN stripe_secret_key VARCHAR(255) DEFAULT '',
-    ADD COLUMN stripe_publishable_key VARCHAR(190) DEFAULT '',
-    ADD COLUMN stripe_webhook_secret VARCHAR(190) DEFAULT '';
+    ADD COLUMN IF NOT EXISTS stripe_secret_key VARCHAR(255) DEFAULT '',
+    ADD COLUMN IF NOT EXISTS stripe_publishable_key VARCHAR(190) DEFAULT '',
+    ADD COLUMN IF NOT EXISTS stripe_webhook_secret VARCHAR(190) DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS modules (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
