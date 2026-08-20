@@ -16,9 +16,20 @@ class CompanySettings
 
     public static function update(array $data): void
     {
-        $assignments = implode(', ', array_map(fn($c) => "{$c} = :{$c}", array_keys($data)));
-        $data['__org_id'] = Auth::organizationId();
-        $stmt = Database::connection()->prepare("UPDATE company_settings SET {$assignments} WHERE organization_id = :__org_id");
+        // Upsert rather than a bare UPDATE: if the organization's row is
+        // somehow missing, a plain UPDATE matches zero rows and silently
+        // no-ops (no PDO error), so the save "succeeds" but nothing is
+        // ever persisted and the form reverts to blank on the next load.
+        $columns = array_keys($data);
+        $placeholders = implode(', ', array_map(fn($c) => ":{$c}", $columns));
+        $columnList = implode(', ', $columns);
+        $updates = implode(', ', array_map(fn($c) => "{$c} = VALUES({$c})", $columns));
+
+        $data['organization_id'] = Auth::organizationId();
+        $stmt = Database::connection()->prepare(
+            "INSERT INTO company_settings (organization_id, {$columnList}) VALUES (:organization_id, {$placeholders})
+             ON DUPLICATE KEY UPDATE {$updates}"
+        );
         $stmt->execute($data);
     }
 
