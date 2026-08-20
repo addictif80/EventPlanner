@@ -20,6 +20,11 @@ class CompanySettings
         // somehow missing, a plain UPDATE matches zero rows and silently
         // no-ops (no PDO error), so the save "succeeds" but nothing is
         // ever persisted and the form reverts to blank on the next load.
+        unset($data['organization_id']);
+        if (empty($data)) {
+            return;
+        }
+
         $columns = array_keys($data);
         $placeholders = implode(', ', array_map(fn($c) => ":{$c}", $columns));
         $columnList = implode(', ', $columns);
