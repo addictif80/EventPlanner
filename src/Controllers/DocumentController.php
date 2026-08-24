@@ -40,9 +40,26 @@ class DocumentController
 
         $originalName = basename($file['name']);
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-        $allowed = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'txt', 'csv'];
-        if (!in_array($ext, $allowed, true)) {
-            Session::flash('error', "Type de fichier non autorisé (extensions acceptées : " . implode(', ', $allowed) . ").");
+        $allowedMimes = [
+            'pdf' => ['application/pdf'],
+            'doc' => ['application/msword'],
+            'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip'],
+            'xls' => ['application/vnd.ms-excel'],
+            'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip'],
+            'jpg' => ['image/jpeg'],
+            'jpeg' => ['image/jpeg'],
+            'png' => ['image/png'],
+            'txt' => ['text/plain'],
+            'csv' => ['text/plain', 'text/csv'],
+        ];
+        if (!isset($allowedMimes[$ext])) {
+            Session::flash('error', "Type de fichier non autorisé (extensions acceptées : " . implode(', ', array_keys($allowedMimes)) . ").");
+            redirect($redirectTo);
+        }
+
+        $detectedMime = @finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file['tmp_name']);
+        if ($detectedMime === false || !in_array($detectedMime, $allowedMimes[$ext], true)) {
+            Session::flash('error', "Le contenu du fichier ne correspond pas à son extension.");
             redirect($redirectTo);
         }
 

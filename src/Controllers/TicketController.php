@@ -47,7 +47,8 @@ class TicketController
     {
         ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
-        TicketCategory::delete((int) $categoryId);
+        Database::connection()->prepare('DELETE FROM ticket_categories WHERE id = ? AND event_id = ? AND organization_id = ?')
+            ->execute([$categoryId, $eventId, Auth::organizationId()]);
         Session::flash('success', 'Catégorie supprimée.');
         redirect('/events/' . $eventId . '/tickets');
     }
@@ -57,7 +58,11 @@ class TicketController
         ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
         $categoryId = (int) input('ticket_category_id');
-        if (!TicketCategory::find($categoryId)) { http_response_code(404); die('Catégorie introuvable.'); }
+        $category = TicketCategory::find($categoryId);
+        if (!$category || (int) $category['event_id'] !== (int) $eventId) {
+            http_response_code(404);
+            die('Catégorie introuvable.');
+        }
 
         Ticket::create([
             'ticket_category_id' => $categoryId,
@@ -74,7 +79,16 @@ class TicketController
     {
         ModuleAccess::requireModule('ticketing');
         Csrf::verifyOrFail();
-        Ticket::update((int) $ticketId, ['status' => 'cancelled']);
+        Database::connection()->prepare(
+            'UPDATE tickets SET status = "cancelled"
+             WHERE id = :ticket_id AND organization_id = :org_id
+             AND ticket_category_id IN (SELECT id FROM ticket_categories WHERE event_id = :event_id AND organization_id = :org_id2)'
+        )->execute([
+            'ticket_id' => $ticketId,
+            'org_id' => Auth::organizationId(),
+            'event_id' => $eventId,
+            'org_id2' => Auth::organizationId(),
+        ]);
         Session::flash('success', 'Billet annulé.');
         redirect('/events/' . $eventId . '/tickets');
     }
