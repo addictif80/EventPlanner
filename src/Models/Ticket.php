@@ -37,4 +37,17 @@ class Ticket extends Model
     {
         return strtoupper(bin2hex(random_bytes(5)));
     }
+
+    /** The guest's non-cancelled ticket in this category, if one was already issued. */
+    public static function forGuestAndCategory(int $guestId, int $categoryId): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT t.*, tc.name AS category_name FROM tickets t
+             JOIN ticket_categories tc ON tc.id = t.ticket_category_id
+             WHERE t.guest_id = ? AND t.ticket_category_id = ? AND t.organization_id = ? AND t.status != 'cancelled'
+             LIMIT 1"
+        );
+        $stmt->execute([$guestId, $categoryId, Auth::organizationId()]);
+        return $stmt->fetch() ?: null;
+    }
 }

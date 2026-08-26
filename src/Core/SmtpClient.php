@@ -33,9 +33,10 @@ class SmtpClient
      * @param string $subject
      * @param string $htmlBody
      * @param string|null $textBody
+     * @param array<int,array{filename:string,mimeType:string,content:string}> $attachments
      * @throws \RuntimeException on failure
      */
-    public function send(string $fromEmail, string $fromName, array $to, string $subject, string $htmlBody, ?string $textBody = null): void
+    public function send(string $fromEmail, string $fromName, array $to, string $subject, string $htmlBody, ?string $textBody = null, array $attachments = []): void
     {
         $host = $this->config['host'];
         $port = (int) $this->config['port'];
@@ -72,25 +73,51 @@ class SmtpClient
 
         $this->command('DATA', 354);
 
-        $boundary = 'evtplanner-' . bin2hex(random_bytes(8));
+        $altBoundary = 'evtplanner-alt-' . bin2hex(random_bytes(8));
         $headers = [];
         $headers[] = 'Date: ' . date('r');
         $headers[] = 'From: ' . $this->encodeHeader($fromName) . ' <' . $fromEmail . '>';
         $headers[] = 'To: ' . implode(', ', $to);
         $headers[] = 'Subject: ' . $this->encodeHeader($subject);
         $headers[] = 'MIME-Version: 1.0';
-        $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"';
         $headers[] = 'X-Mailer: EventPlanner';
 
-        $text = $textBody ?? trim(strip_tags($htmlBody));
+        // View templates and heredocs use bare "\n" line endings; SMTP (and the RFC 5321
+        // 1000-octet line limit enforced by strict servers) requires "\r\n" throughout,
+        // otherwise a long HTML document arrives as one gigantic "line" and gets rejected.
+        $text = $this->crlf($textBody ?? trim(strip_tags($htmlBody)));
+        $htmlBody = $this->crlf($htmlBody);
 
-        $body = "--{$boundary}\r\n";
-        $body .= "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n";
-        $body .= $this->stuff($text) . "\r\n";
-        $body .= "--{$boundary}\r\n";
-        $body .= "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n";
-        $body .= $this->stuff($htmlBody) . "\r\n";
-        $body .= "--{$boundary}--\r\n";
+        $altPart = "--{$altBoundary}\r\n";
+        $altPart .= "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n";
+        $altPart .= $this->stuff($text) . "\r\n";
+        $altPart .= "--{$altBoundary}\r\n";
+        $altPart .= "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n";
+        $altPart .= $this->stuff($htmlBody) . "\r\n";
+        $altPart .= "--{$altBoundary}--\r\n";
+
+        if (empty($attachments)) {
+            $headers[] = 'Content-Type: multipart/alternative; boundary="' . $altBoundary . '"';
+            $body = $altPart;
+        } else {
+            $mixedBoundary = 'evtplanner-mix-' . bin2hex(random_bytes(8));
+            $headers[] = 'Content-Type: multipart/mixed; boundary="' . $mixedBoundary . '"';
+
+            $body = "--{$mixedBoundary}\r\n";
+            $body .= "Content-Type: multipart/alternative; boundary=\"{$altBoundary}\"\r\n\r\n";
+            $body .= $altPart . "\r\n";
+
+            foreach ($attachments as $attachment) {
+                $body .= "--{$mixedBoundary}\r\n";
+                $body .= 'Content-Type: ' . $attachment['mimeType'] . '; name="' . $this->encodeHeader($attachment['filename']) . "\"\r\n";
+                $body .= 'Content-Disposition: attachment; filename="' . $this->encodeHeader($attachment['filename']) . "\"\r\n";
+                $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
+                $body .= chunk_split(base64_encode($attachment['content']));
+                $body .= "\r\n";
+            }
+
+            $body .= "--{$mixedBoundary}--\r\n";
+        }
 
         $message = implode("\r\n", $headers) . "\r\n\r\n" . $body . "\r\n.";
 
@@ -104,6 +131,12 @@ class SmtpClient
     {
         // RFC 5321 dot-stuffing for lines starting with a period.
         return preg_replace('/^\./m', '..', $data);
+    }
+
+    /** Normalizes all line endings to CRLF, as SMTP DATA content requires. */
+    private function crlf(string $data): string
+    {
+        return preg_replace('/\r\n|\r|\n/', "\r\n", $data);
     }
 
     private function encodeHeader(string $value): string
