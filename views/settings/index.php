@@ -4,6 +4,7 @@
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-smtp">Email (SMTP)</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-templates">Modèles d'emails</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-integrations">Intégrations</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">Organisation</a></li>
   <li class="nav-item"><a class="nav-link" href="<?= url('/settings/activity-log') ?>">Journal d'activité</a></li>
 </ul>
 
@@ -131,6 +132,33 @@
       <h3 class="h6">Export emailing</h3>
       <p class="text-muted small">Exportez la liste de vos clients (email, nom) au format CSV pour l'importer dans Mailchimp ou tout autre outil d'emailing.</p>
       <a href="<?= url('/export/clients.csv') ?>" class="btn btn-outline-dark btn-sm">Exporter les emails clients (CSV)</a>
+    </div></div>
+  </div>
+
+  <div class="tab-pane fade" id="tab-organization">
+    <div class="card mb-3"><div class="card-body">
+      <h3 class="h6">Mon compte</h3>
+      <p class="text-muted small mb-2">Consultez et gérez vos propres données personnelles (export, suppression de compte).</p>
+      <a href="<?= url('/account') ?>" class="btn btn-outline-secondary btn-sm">Aller à « Mon compte »</a>
+    </div></div>
+
+    <div class="card border-danger"><div class="card-body">
+      <h3 class="h6 text-danger">Zone dangereuse</h3>
+      <p class="mb-2">Supprimer définitivement cette organisation et toutes ses données (clients, événements, devis, factures, utilisateurs...). Cette action est irréversible.</p>
+      <form method="post" action="<?= url('/settings/organization/delete') ?>" class="row g-2" onsubmit="return confirm('Cette action supprimera irréversiblement toute l\'organisation et l\'ensemble de ses données. Continuer ?');">
+        <?= csrf_field() ?>
+        <div class="col-md-4">
+          <label class="form-label small">Votre mot de passe</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label small">Tapez le nom de l'organisation pour confirmer</label>
+          <input type="text" name="confirm_name" class="form-control" required>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-danger w-100">Supprimer l'organisation</button>
+        </div>
+      </form>
     </div></div>
   </div>
 </div>

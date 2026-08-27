@@ -104,6 +104,16 @@ class ClientController
         redirect('/clients');
     }
 
+    /** Dismisses a client's self-service erasure request without deleting them (e.g. legal retention duty on their invoices). */
+    public static function dismissErasureRequest(string $id): void
+    {
+        Csrf::verifyOrFail();
+        Client::update((int) $id, ['deletion_requested_at' => null]);
+        ActivityLog::record('Demande de suppression traitée', 'client', (int) $id);
+        Session::flash('success', 'Demande marquée comme traitée.');
+        redirect('/clients/' . $id);
+    }
+
     private static function validated(): array
     {
         return [

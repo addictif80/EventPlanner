@@ -43,6 +43,8 @@ use App\Controllers\SubscriptionController;
 use App\Controllers\LandingController;
 use App\Controllers\PageController;
 use App\Controllers\AdminSiteController;
+use App\Controllers\AccountController;
+use App\Controllers\ClientMessageController;
 
 $router = new Router();
 
@@ -70,6 +72,9 @@ $router->get('/clients/{id}', fn($p) => ClientController::show($p['id']));
 $router->get('/clients/{id}/edit', fn($p) => ClientController::edit($p['id']));
 $router->post('/clients/{id}', fn($p) => ClientController::update($p['id']));
 $router->post('/clients/{id}/delete', fn($p) => ClientController::destroy($p['id']));
+$router->post('/clients/{id}/erasure-request/dismiss', fn($p) => ClientController::dismissErasureRequest($p['id']));
+$router->get('/clients/{id}/messages.json', fn($p) => ClientMessageController::staffPoll($p['id']));
+$router->post('/clients/{id}/messages', fn($p) => ClientMessageController::staffSend($p['id']));
 
 // Events
 $router->get('/events', fn() => EventController::index());
@@ -145,6 +150,11 @@ $router->post('/settings/smtp', fn() => SettingsController::updateSmtp());
 $router->post('/settings/smtp/test', fn() => SettingsController::testSmtp());
 $router->post('/settings/email-templates', fn() => SettingsController::updateEmailTemplates());
 $router->post('/settings/ics-token', fn() => SettingsController::generateIcsToken());
+$router->post('/settings/organization/delete', fn() => SettingsController::destroyOrganization());
+
+$router->get('/account', fn() => AccountController::show());
+$router->get('/account/export.json', fn() => AccountController::exportData());
+$router->post('/account/delete', fn() => AccountController::destroy());
 
 // Users (admin only)
 $router->get('/users', fn() => UserController::index());
@@ -323,11 +333,19 @@ $router->post('/admin/menu/{id}/delete', fn($p) => AdminSiteController::destroyM
 // --- Routes publiques (sans authentification) ---
 $router->get('/rsvp/{token}', fn($p) => GuestController::rsvpForm($p['token']));
 $router->post('/rsvp/{token}', fn($p) => GuestController::rsvpSubmit($p['token']));
+$router->post('/rsvp/{token}/delete', fn($p) => GuestController::rsvpDelete($p['token']));
 $router->get('/sign/{token}', fn($p) => ContractController::signForm($p['token']));
 $router->post('/sign/{token}', fn($p) => ContractController::signSubmit($p['token']));
 $router->get('/survey/{token}', fn($p) => SurveyController::form($p['token']));
 $router->post('/survey/{token}', fn($p) => SurveyController::submit($p['token']));
 $router->get('/portal/{token}', fn($p) => PortalController::show($p['token']));
+$router->post('/portal/{token}/quotes/{id}/accept', fn($p) => PortalController::acceptQuote($p['token'], $p['id']));
+$router->post('/portal/{token}/quotes/{id}/refuse', fn($p) => PortalController::refuseQuote($p['token'], $p['id']));
+$router->post('/portal/{token}/invoices/{id}/pay', fn($p) => StripeController::createPortalPaymentLink($p['token'], $p['id']));
+$router->get('/portal/{token}/export.json', fn($p) => PortalController::exportData($p['token']));
+$router->post('/portal/{token}/erasure-request', fn($p) => PortalController::requestErasure($p['token']));
+$router->get('/portal/{token}/messages.json', fn($p) => ClientMessageController::portalPoll($p['token']));
+$router->post('/portal/{token}/messages', fn($p) => ClientMessageController::portalSend($p['token']));
 $router->get('/calendar/{token}.ics', fn($p) => CalendarController::feed($p['token']));
 
 return $router;

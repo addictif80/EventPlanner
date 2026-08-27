@@ -162,4 +162,40 @@ class SettingsController
 
         redirect('/settings');
     }
+
+    /**
+     * Danger zone: permanently deletes the whole organization and every
+     * record attached to it. Every tenant table's organization_id foreign
+     * key is declared ON DELETE CASCADE (see database/schema.sql), so
+     * removing the organizations row is sufficient to erase everything —
+     * clients, events, quotes, invoices, users, etc.
+     */
+    public static function destroyOrganization(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        $stmt = Database::connection()->prepare('SELECT password_hash FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([Auth::id()]);
+        $passwordHash = $stmt->fetchColumn();
+
+        if (!$passwordHash || !password_verify(input('password', ''), $passwordHash)) {
+            Session::flash('error', 'Mot de passe incorrect.');
+            redirect('/settings');
+        }
+
+        $stmt = Database::connection()->prepare('SELECT name FROM organizations WHERE id = ?');
+        $stmt->execute([Auth::organizationId()]);
+        $orgName = $stmt->fetchColumn();
+
+        if (trim(input('confirm_name', '')) !== $orgName) {
+            Session::flash('error', "Le nom saisi ne correspond pas au nom de l'organisation. Suppression annulée.");
+            redirect('/settings');
+        }
+
+        Database::connection()->prepare('DELETE FROM organizations WHERE id = ?')->execute([Auth::organizationId()]);
+
+        Auth::logout();
+        redirect('/');
+    }
 }

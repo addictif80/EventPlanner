@@ -43,7 +43,7 @@ ABhD (abhd.fr)<br>
 <p>L'ensemble des éléments composant le Service (logiciel, textes, graphismes, logos, structure de navigation) est la propriété exclusive d'ABhD ou de ses partenaires, sauf mention contraire, et est protégé par le Code de la propriété intellectuelle. Toute reproduction, représentation ou exploitation, totale ou partielle, sans autorisation préalable est interdite.</p>
 
 <h2>Données personnelles</h2>
-<p>Le traitement des données personnelles réalisé dans le cadre du Service est décrit dans les Conditions Générales d'Utilisation. Pour toute question ou pour exercer vos droits, vous pouvez contacter ABhD via le formulaire de support de l'espace client. Vous disposez également du droit d'introduire une réclamation auprès de la Commission Nationale de l'Informatique et des Libertés (CNIL) — <a href="https://www.cnil.fr">www.cnil.fr</a>.</p>
+<p>Le traitement des données personnelles réalisé dans le cadre du Service est décrit dans les Conditions Générales d'Utilisation. Un utilisateur du Service peut exercer ses droits sur ses propres données de compte (export, suppression) directement depuis la rubrique « Mon compte » de son espace ; le client d'une organisation utilisatrice peut faire de même sur ses propres données depuis son portail client (export, demande de suppression). Pour toute autre question, vous pouvez contacter ABhD via le formulaire de support de l'espace client. Vous disposez également du droit d'introduire une réclamation auprès de la Commission Nationale de l'Informatique et des Libertés (CNIL) — <a href="https://www.cnil.fr">www.cnil.fr</a>.</p>
 
 <h2>Cookies</h2>
 <p>Le Service n'utilise que des cookies strictement nécessaires à son fonctionnement (authentification, sécurité de session). Aucun cookie de mesure d'audience ou publicitaire n'est déposé à ce jour.</p>
@@ -91,7 +91,14 @@ $cgu = <<<'HTML'
 </ul>
 <p>ABhD met en œuvre les mesures techniques et organisationnelles raisonnables pour assurer la sécurité et la confidentialité des données hébergées. Le paiement des abonnements est traité par le prestataire Stripe ; ABhD ne stocke aucune donnée de carte bancaire sur ses propres serveurs.</p>
 <p>Les données sont hébergées par ABhD (abhd.fr) en France. Elles sont conservées pendant toute la durée du contrat, puis archivées ou supprimées conformément aux durées de conservation légales et à l'article « Réversibilité » des CGV en cas de résiliation.</p>
-<p>Pour exercer vos droits d'accès, de rectification, d'effacement, de limitation, d'opposition ou de portabilité sur vos données de compte, vous pouvez contacter ABhD via le formulaire de support de l'espace client. Vous disposez du droit d'introduire une réclamation auprès de la CNIL (<a href="https://www.cnil.fr">www.cnil.fr</a>).</p>
+<p>Le Service propose les fonctionnalités concrètes suivantes pour l'exercice des droits RGPD :</p>
+<ul>
+<li>L'Utilisateur peut, à tout moment, exporter ses propres données de compte et supprimer son compte depuis la rubrique « Mon compte » de son espace ; si l'Utilisateur est le seul membre de son organisation, la suppression de son compte entraîne la suppression de l'organisation et de l'ensemble de ses données.</li>
+<li>Un administrateur peut supprimer définitivement toute l'organisation (et les comptes de ses membres) depuis Paramètres &gt; Organisation.</li>
+<li>Le client d'une organisation peut, depuis son portail client (lien personnel transmis par l'organisateur), exporter ses propres données (événements, devis, factures, messages) et transmettre une demande de suppression de ses données à l'organisation, laquelle devra y donner suite sous réserve de ses propres obligations légales de conservation (notamment comptables sur les factures).</li>
+<li>Un invité à un événement peut, depuis son lien d'invitation, consulter, modifier ou supprimer les données qu'il a transmises (réponse RSVP, régime alimentaire, accompagnants).</li>
+</ul>
+<p>Pour toute autre demande relative à ses droits d'accès, de rectification, de limitation ou d'opposition, l'Utilisateur peut contacter ABhD via le formulaire de support de l'espace client. Vous disposez du droit d'introduire une réclamation auprès de la CNIL (<a href="https://www.cnil.fr">www.cnil.fr</a>).</p>
 
 <h2>7. Propriété intellectuelle</h2>
 <p>Le logiciel EventPlanner, sa structure, ses codes sources, bases de données, textes et éléments graphiques sont la propriété exclusive d'ABhD et sont protégés par le droit de la propriété intellectuelle. L'Utilisateur bénéficie d'un droit d'usage personnel, non exclusif et non transférable du Service, pour la durée de son abonnement.</p>
@@ -135,7 +142,7 @@ $cgv = <<<'HTML'
 <p>En cas d'échec de paiement, ABhD peut suspendre l'accès aux fonctionnalités payantes jusqu'à régularisation, après en avoir informé le Client.</p>
 
 <h2>5. Durée, résiliation et renouvellement</h2>
-<p>Les abonnements payants sont conclus sans engagement de durée minimale et sont facturés par périodes mensuelles, reconduites tacitement à chaque échéance. Le Client peut résilier son abonnement à tout moment depuis son espace client ou en le demandant via le formulaire de support ; la résiliation prend effet à la fin de la période de facturation en cours, sans remboursement de la période déjà entamée, sauf erreur de facturation imputable à ABhD.</p>
+<p>Les abonnements payants sont conclus sans engagement de durée minimale et sont facturés par périodes mensuelles, reconduites tacitement à chaque échéance. Le Client peut résilier son abonnement à tout moment en supprimant son organisation depuis Paramètres &gt; Organisation (ou son propre compte depuis « Mon compte », si applicable), ou en le demandant via le formulaire de support ; la résiliation prend effet à la fin de la période de facturation en cours, sans remboursement de la période déjà entamée, sauf erreur de facturation imputable à ABhD.</p>
 <p>ABhD peut résilier l'abonnement d'un Client en cas de manquement grave aux présentes CGV ou aux CGU, dans les conditions décrites à l'article « Suspension et résiliation pour manquement » des CGU.</p>
 
 <h2>6. Droit de rétractation (Clients consommateurs)</h2>
@@ -149,7 +156,7 @@ $cgv = <<<'HTML'
 <p>Ces limitations ne s'appliquent pas aux dommages résultant d'une faute lourde ou dolosive d'ABhD, ni aux cas où la loi interdit une telle limitation à l'égard des consommateurs.</p>
 
 <h2>8. Réversibilité et export des données</h2>
-<p>À tout moment de son abonnement, le Client peut exporter ses données depuis les fonctionnalités d'export prévues dans le Service. En cas de résiliation, le Client dispose d'un délai de 30 jours à compter de la fin de son abonnement pour exporter ses données ; passé ce délai, ABhD pourra procéder à leur suppression définitive.</p>
+<p>À tout moment de son abonnement, le Client peut exporter ses données depuis les fonctionnalités d'export prévues dans le Service (notamment les exports CSV clients/factures disponibles dans Paramètres, et l'export de ses propres données de compte depuis « Mon compte »). La suppression d'une organisation ou d'un compte étant immédiate et irréversible (voir CGU, article « Données personnelles »), il appartient au Client d'exporter les données qu'il souhaite conserver avant de procéder à une telle suppression.</p>
 
 <h2>9. Force majeure</h2>
 <p>Aucune des parties ne pourra être tenue responsable d'un manquement à ses obligations résultant d'un cas de force majeure au sens de l'article 1218 du Code civil.</p>

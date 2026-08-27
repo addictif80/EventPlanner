@@ -129,6 +129,7 @@ class GuestController
     {
         $guest = Guest::findByToken($token);
         if (!$guest) { http_response_code(404); die('Lien invalide ou expiré.'); }
+        Csrf::verifyOrFail();
 
         // Public, unauthenticated action: no organization session exists here,
         // so we bypass the tenant-scoped Model::update() and target the row
@@ -145,6 +146,20 @@ class GuestController
         ]);
 
         View::render('guests/rsvp_thanks', [], layout: null);
+    }
+
+    /** Self-service erasure: the guest removes their own RSVP data via their invite link. */
+    public static function rsvpDelete(string $token): void
+    {
+        $guest = Guest::findByToken($token);
+        if (!$guest) { http_response_code(404); die('Lien invalide ou expiré.'); }
+        Csrf::verifyOrFail();
+
+        Database::connection()
+            ->prepare('DELETE FROM guests WHERE id = ? AND organization_id = ?')
+            ->execute([$guest['id'], $guest['organization_id']]);
+
+        View::render('guests/rsvp_deleted', [], layout: null);
     }
 
     public static function storeTable(string $eventId): void

@@ -72,6 +72,7 @@ $flashes = flashes();
       <div class="d-flex align-items-center gap-3">
         <?php if ($user): ?>
         <span class="text-muted small"><?= View::e($user['name']) ?> · <?= View::e($user['role']) ?></span>
+        <a href="<?= url('/account') ?>" class="btn btn-sm btn-outline-secondary">Mon compte</a>
         <a href="<?= url('/logout') ?>" class="btn btn-sm btn-outline-secondary">Déconnexion</a>
         <?php endif; ?>
       </div>
