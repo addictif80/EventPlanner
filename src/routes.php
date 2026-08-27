@@ -40,6 +40,7 @@ use App\Controllers\AdminSettingsController;
 use App\Controllers\AdminOfferController;
 use App\Controllers\SupportController;
 use App\Controllers\SubscriptionController;
+use App\Controllers\LandingController;
 
 $router = new Router();
 
@@ -53,8 +54,10 @@ $router->post('/register', fn() => RegisterController::register());
 // --- Everything below requires authentication ---
 // (enforced in public/index.php before dispatch, based on the request path,
 // since route closures here are only registered, not executed, at this point)
+// "/" is the exception: it is public and shows the landing page to visitors,
+// but dispatches to the dashboard for already-authenticated users.
 
-$router->get('/', fn() => DashboardController::index());
+$router->get('/', fn() => LandingController::index());
 
 // Clients
 $router->get('/clients', fn() => ClientController::index());
