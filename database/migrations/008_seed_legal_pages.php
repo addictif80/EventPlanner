@@ -1,23 +1,10 @@
 <?php
-
-/**
- * One-off CLI script: creates (or updates, if already present) the three
- * legal pages — Mentions légales, CGU, CGV — as site_pages rows, and adds
- * matching links to the footer menu (site_menu_items) if not already there.
- * Safe to re-run: upserts by slug / by (location, url).
- *
- * Usage: php bin/seed_legal_pages.php
- */
-
-require dirname(__DIR__) . '/src/autoload.php';
-
-use App\Core\Database;
-
-if (PHP_SAPI !== 'cli') {
-    die("Ce script doit être exécuté en ligne de commande.\n");
-}
-
-$pdo = Database::connection();
+// Data seed (see Migrator docblock): creates/updates the three legal pages —
+// Mentions légales, CGU, CGV — as site_pages rows, and adds matching links
+// to the footer menu (site_menu_items) if not already there. Runs with a
+// connected $pdo in scope. Idempotent: upserts by slug / by (location, url),
+// so editing this file and bumping it into a later-numbered migration is the
+// supported way to republish updated legal text.
 
 $mentionsLegales = <<<'HTML'
 <h2>Édition du site</h2>
@@ -186,28 +173,22 @@ $upsertPage = $pdo->prepare(
 
 foreach ($pages as $page) {
     $upsertPage->execute($page);
-    echo "Page « {$page['title']} » enregistrée (/page/{$page['slug']}).\n";
 }
 
 $footerLinks = [
     ['label' => 'Mentions légales', 'url' => '/page/mentions-legales', 'sort_order' => 90],
-    ['label' => "CGU", 'url' => '/page/cgu', 'sort_order' => 91],
+    ['label' => 'CGU', 'url' => '/page/cgu', 'sort_order' => 91],
     ['label' => 'CGV', 'url' => '/page/cgv', 'sort_order' => 92],
 ];
 
 $existsStmt = $pdo->prepare("SELECT id FROM site_menu_items WHERE location = 'footer' AND url = ? LIMIT 1");
-$insertStmt = $pdo->prepare(
+$insertLinkStmt = $pdo->prepare(
     "INSERT INTO site_menu_items (location, label, url, sort_order, is_active) VALUES ('footer', :label, :url, :sort_order, 1)"
 );
 
 foreach ($footerLinks as $link) {
     $existsStmt->execute([$link['url']]);
-    if ($existsStmt->fetch()) {
-        echo "Lien de pied de page vers {$link['url']} déjà présent, non dupliqué.\n";
-        continue;
+    if (!$existsStmt->fetch()) {
+        $insertLinkStmt->execute($link);
     }
-    $insertStmt->execute($link);
-    echo "Lien de pied de page « {$link['label']} » ajouté.\n";
 }
-
-echo "Terminé.\n";
