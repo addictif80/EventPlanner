@@ -106,6 +106,7 @@ class SettingsController
             'quote_prefix' => input('quote_prefix', 'DEV-'),
             'invoice_prefix' => input('invoice_prefix', 'FAC-'),
             'invoice_footer' => input('invoice_footer', ''),
+            'brand_color' => preg_match('/^#[0-9a-fA-F]{6}$/', input('brand_color', '')) ? input('brand_color') : '#3b56d9',
         ], $logoData));
 
         Session::flash('success', 'Informations de l\'entreprise mises à jour.');

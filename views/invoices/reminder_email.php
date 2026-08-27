@@ -15,4 +15,5 @@
     <tr><td style="padding:8px;"><strong>Reste dû</strong></td><td style="padding:8px;"><strong><?= View::money((float)$invoice['total'] - (float)$invoice['amount_paid']) ?></strong></td></tr>
   </table>
   <p>Cordialement,<br><?= View::e($company['company_name']) ?></p>
+  <p style="color:#999; font-size:11px; margin-top:24px;">Propulsé par EventPlanner</p>
 </div>

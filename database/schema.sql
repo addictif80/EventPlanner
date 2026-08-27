@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS company_settings (
     default_tax_rate DECIMAL(5,2) NOT NULL DEFAULT 20.00,
     currency VARCHAR(10) NOT NULL DEFAULT 'EUR',
     logo_path VARCHAR(255) DEFAULT '',
+    brand_color VARCHAR(9) NOT NULL DEFAULT '#3b56d9',
     quote_prefix VARCHAR(20) NOT NULL DEFAULT 'DEV-',
     invoice_prefix VARCHAR(20) NOT NULL DEFAULT 'FAC-',
     invoice_footer TEXT,

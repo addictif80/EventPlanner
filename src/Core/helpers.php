@@ -41,6 +41,22 @@ function full_url(string $path = ''): string
     return $appUrl . $path;
 }
 
+/** Lightens ($percent > 0) or darkens ($percent < 0) a "#rrggbb" color by $percent (0-100), for hover/focus shades. */
+function shade_color(string $hex, float $percent): string
+{
+    $hex = ltrim($hex, '#');
+    if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
+        return '#' . $hex;
+    }
+    $rgb = str_split($hex, 2);
+    $adjusted = array_map(function ($channel) use ($percent) {
+        $value = hexdec($channel);
+        $value = $percent >= 0 ? $value + (255 - $value) * ($percent / 100) : $value * (1 + $percent / 100);
+        return str_pad(dechex((int) max(0, min(255, round($value)))), 2, '0', STR_PAD_LEFT);
+    }, $rgb);
+    return '#' . implode('', $adjusted);
+}
+
 /** Absolute URL to an organization's uploaded logo, or '' if none is set. */
 function org_logo_url(?int $organizationId, array $company): string
 {

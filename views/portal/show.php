@@ -1,4 +1,9 @@
-<?php use App\Core\View; use App\Models\Client; $logoUrl = org_logo_url($client['organization_id'] ?? null, $company ?? []); ?>
+<?php
+use App\Core\View;
+use App\Models\Client;
+$logoUrl = org_logo_url($client['organization_id'] ?? null, $company ?? []);
+$brandColor = preg_match('/^#[0-9a-fA-F]{6}$/', $company['brand_color'] ?? '') ? $company['brand_color'] : '#3b56d9';
+?>
 <!doctype html>
 <html lang="fr">
 <head>
@@ -8,7 +13,15 @@
 <title>Espace client — <?= View::e(Client::displayName($client)) ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<style>.chat-thread{height:280px;overflow-y:auto;background:#fff;} .chat-msg{max-width:80%;} .chat-msg.mine{margin-left:auto;}</style>
+<style>
+.chat-thread{height:280px;overflow-y:auto;background:#fff;} .chat-msg{max-width:80%;} .chat-msg.mine{margin-left:auto;}
+/* Marque blanche : couleur de l'organisation à la place du bleu par défaut. */
+.btn-primary{ --bs-btn-bg: <?= $brandColor ?>; --bs-btn-border-color: <?= $brandColor ?>; --bs-btn-hover-bg: <?= shade_color($brandColor, -12) ?>; --bs-btn-hover-border-color: <?= shade_color($brandColor, -12) ?>; --bs-btn-active-bg: <?= shade_color($brandColor, -18) ?>; --bs-btn-active-border-color: <?= shade_color($brandColor, -18) ?>; }
+.btn-outline-primary{ --bs-btn-color: <?= $brandColor ?>; --bs-btn-border-color: <?= $brandColor ?>; --bs-btn-hover-bg: <?= $brandColor ?>; --bs-btn-hover-border-color: <?= $brandColor ?>; }
+.chat-msg.mine{ background-color: <?= $brandColor ?> !important; }
+.alert-primary{ --bs-alert-color: <?= shade_color($brandColor, -25) ?>; --bs-alert-bg: <?= shade_color($brandColor, 88) ?>; --bs-alert-border-color: <?= shade_color($brandColor, 75) ?>; }
+a{ color: <?= $brandColor ?>; }
+</style>
 </head>
 <body class="bg-light">
 <?php include __DIR__ . '/../partials/pwa_install_banner.php'; ?>
@@ -212,5 +225,7 @@
   setInterval(poll, 4000);
 })();
 </script>
+
+<div class="text-center text-muted py-3" style="font-size:.75rem;">Propulsé par EventPlanner</div>
 </body>
 </html>

@@ -28,6 +28,13 @@
           </div>
           <p class="form-text">Utilisé dans les emails envoyés à vos clients et sur vos devis/factures/contrats. PNG, JPG, WebP ou SVG, 2 Mo max.</p>
         </div>
+        <div class="mb-3">
+          <label class="form-label">Couleur de marque</label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="color" name="brand_color" value="<?= View::e($company['brand_color'] ?? '#3b56d9') ?>" class="form-control form-control-color" title="Choisir une couleur">
+          </div>
+          <p class="form-text">Utilisée pour personnaliser le portail client et les emails à vos couleurs.</p>
+        </div>
         <div class="row g-3">
           <div class="col-md-6"><label class="form-label">Nom de l'entreprise</label><input type="text" name="company_name" class="form-control" value="<?= View::e($company['company_name'] ?? '') ?>"></div>
           <div class="col-md-6"><label class="form-label">Forme juridique</label><input type="text" name="legal_form" class="form-control" value="<?= View::e($company['legal_form'] ?? '') ?>"></div>

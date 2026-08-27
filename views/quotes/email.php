@@ -1,4 +1,9 @@
-<?php use App\Core\Auth; use App\Core\View; $logoUrl = org_logo_url(Auth::organizationId(), $company); ?>
+<?php
+use App\Core\Auth;
+use App\Core\View;
+$logoUrl = org_logo_url(Auth::organizationId(), $company);
+$brandColor = preg_match('/^#[0-9a-fA-F]{6}$/', $company['brand_color'] ?? '') ? $company['brand_color'] : '#3b56d9';
+?>
 <div style="font-family: Arial, sans-serif; color:#222; max-width:600px; margin:auto;">
   <?php if ($logoUrl): ?>
     <img src="<?= View::e($logoUrl) ?>" alt="<?= View::e($company['company_name']) ?>" style="max-height:56px; max-width:220px; margin-bottom:12px;">
@@ -20,7 +25,8 @@
       <?php endforeach; ?>
     </tbody>
   </table>
-  <p><strong>Total TTC : <?= View::money((float)$quote['total']) ?></strong></p>
+  <p><strong style="color:<?= View::e($brandColor) ?>;">Total TTC : <?= View::money((float)$quote['total']) ?></strong></p>
   <?php if (!empty($quote['notes'])): ?><p><?= nl2br(View::e($quote['notes'])) ?></p><?php endif; ?>
   <p>Cordialement,<br><?= View::e($company['company_name']) ?></p>
+  <p style="color:#999; font-size:11px; margin-top:24px;">Propulsé par EventPlanner</p>
 </div>
