@@ -10,12 +10,14 @@ $flashes = flashes();
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php include __DIR__ . '/../partials/favicon.php'; ?>
 <title><?= View::e($title ?? 'EventPlanner') ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="<?= url('/assets/css/style.css') ?>">
 </head>
 <body>
+<?php include __DIR__ . '/../partials/pwa_install_banner.php'; ?>
 <div class="d-flex">
   <nav class="sidebar bg-dark text-white p-3 vh-100" style="width:230px; position:sticky; top:0;">
     <a href="<?= url('/') ?>" class="d-flex align-items-center mb-4 text-white text-decoration-none">

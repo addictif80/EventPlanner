@@ -116,6 +116,7 @@
     setInterval(poll, 20000);
 
     if (config.pushSubscribeUrl && 'serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
       navigator.serviceWorker.ready.then(function (registration) {
         registration.pushManager.getSubscription().then(function (existing) {
           if (existing) return;

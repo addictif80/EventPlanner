@@ -4,12 +4,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php include __DIR__ . '/../partials/favicon.php'; ?>
 <title>Espace client — <?= View::e(Client::displayName($client)) ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>.chat-thread{height:280px;overflow-y:auto;background:#fff;} .chat-msg{max-width:80%;} .chat-msg.mine{margin-left:auto;}</style>
 </head>
 <body class="bg-light">
+<?php include __DIR__ . '/../partials/pwa_install_banner.php'; ?>
 <div class="container py-5">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
     <h1 class="h4 mb-0">Bonjour <?= View::e(Client::displayName($client)) ?>,</h1>
