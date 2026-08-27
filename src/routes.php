@@ -46,6 +46,7 @@ use App\Controllers\AdminSiteController;
 use App\Controllers\AccountController;
 use App\Controllers\ClientMessageController;
 use App\Controllers\NotificationController;
+use App\Controllers\OrgLogoController;
 
 $router = new Router();
 
@@ -64,6 +65,7 @@ $router->post('/register', fn() => RegisterController::register());
 
 $router->get('/', fn() => LandingController::index());
 $router->get('/page/{slug}', fn($p) => PageController::show($p['slug']));
+$router->get('/org-logo/{id}', fn($p) => OrgLogoController::show($p['id']));
 
 // Clients
 $router->get('/clients', fn() => ClientController::index());

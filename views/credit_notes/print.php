@@ -1,4 +1,4 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\Auth; use App\Core\View; $logoUrl = org_logo_url(Auth::organizationId(), $company); ?>
 <!doctype html>
 <html lang="fr">
 <head>
@@ -12,6 +12,7 @@
 </head>
 <body>
 <button class="print-btn" onclick="window.print()">Imprimer / Enregistrer en PDF</button>
+<?php if ($logoUrl): ?><img src="<?= View::e($logoUrl) ?>" alt="" style="max-height:60px; max-width:220px; display:block; margin-bottom:8px;"><?php endif; ?>
 <h2><?= View::e($company['company_name']) ?></h2>
 <h3>Avoir <?= View::e($creditNote['credit_note_number']) ?></h3>
 <p>Date : <?= View::date($creditNote['issue_date']) ?><br>

@@ -66,12 +66,16 @@ class PortalController
         $stmt->execute([$client['id'], $orgId]);
         $invoices = $stmt->fetchAll();
 
+        $companyStmt = $pdo->prepare('SELECT * FROM company_settings WHERE organization_id = ?');
+        $companyStmt->execute([$orgId]);
+
         View::render('portal/show', [
             'client' => $client,
             'events' => $events,
             'quotes' => $quotes,
             'invoices' => $invoices,
             'token' => $token,
+            'company' => $companyStmt->fetch() ?: [],
             'stripeAvailable' => \App\Core\ModuleAccess::has('stripe_payments', $orgId),
         ], layout: null);
     }

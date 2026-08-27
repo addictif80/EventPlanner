@@ -68,12 +68,28 @@ class SettingsController
         View::render('settings/activity_log', ['title' => "Journal d'activité", 'logs' => $stmt->fetchAll()]);
     }
 
+    private const LOGO_UPLOAD_DIR = __DIR__ . '/../../storage/uploads/logos';
+
     public static function updateCompany(): void
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
 
-        CompanySettings::update([
+        $logoData = [];
+        if (input('remove_logo') === '1') {
+            self::deleteStoredLogo(CompanySettings::get()['logo_path'] ?? '');
+            $logoData['logo_path'] = '';
+        } elseif (!empty($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $newLogoPath = self::storeLogo($_FILES['logo']);
+            if ($newLogoPath !== null) {
+                self::deleteStoredLogo(CompanySettings::get()['logo_path'] ?? '');
+                $logoData['logo_path'] = $newLogoPath;
+            } else {
+                Session::flash('error', 'Logo non enregistré : format ou taille invalide (PNG/JPG/WebP/SVG, 2 Mo max).');
+            }
+        }
+
+        CompanySettings::update(array_merge([
             'company_name' => input('company_name', ''),
             'legal_form' => input('legal_form', ''),
             'address' => input('address', ''),
@@ -90,7 +106,7 @@ class SettingsController
             'quote_prefix' => input('quote_prefix', 'DEV-'),
             'invoice_prefix' => input('invoice_prefix', 'FAC-'),
             'invoice_footer' => input('invoice_footer', ''),
-        ]);
+        ], $logoData));
 
         Session::flash('success', 'Informations de l\'entreprise mises à jour.');
         redirect('/settings');
@@ -197,5 +213,40 @@ class SettingsController
 
         Auth::logout();
         redirect('/');
+    }
+
+    private static function storeLogo(array $file): ?string
+    {
+        if ($file['size'] > 2 * 1024 * 1024) {
+            return null;
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'svg' => 'image/svg+xml'];
+        if (!isset($allowed[$ext])) {
+            return null;
+        }
+
+        if (!is_dir(self::LOGO_UPLOAD_DIR)) {
+            mkdir(self::LOGO_UPLOAD_DIR, 0755, true);
+        }
+
+        $storedName = Auth::organizationId() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        if (!move_uploaded_file($file['tmp_name'], self::LOGO_UPLOAD_DIR . '/' . $storedName)) {
+            return null;
+        }
+
+        return $storedName;
+    }
+
+    private static function deleteStoredLogo(string $storedName): void
+    {
+        if ($storedName === '') {
+            return;
+        }
+        $path = self::LOGO_UPLOAD_DIR . '/' . basename($storedName);
+        if (is_file($path)) {
+            unlink($path);
+        }
     }
 }

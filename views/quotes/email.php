@@ -1,6 +1,10 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\Auth; use App\Core\View; $logoUrl = org_logo_url(Auth::organizationId(), $company); ?>
 <div style="font-family: Arial, sans-serif; color:#222; max-width:600px; margin:auto;">
-  <h2><?= View::e($company['company_name']) ?></h2>
+  <?php if ($logoUrl): ?>
+    <img src="<?= View::e($logoUrl) ?>" alt="<?= View::e($company['company_name']) ?>" style="max-height:56px; max-width:220px; margin-bottom:12px;">
+  <?php else: ?>
+    <h2><?= View::e($company['company_name']) ?></h2>
+  <?php endif; ?>
   <p>Bonjour,</p>
   <p><?= nl2br(View::e($intro ?? 'Veuillez trouver ci-dessous le récapitulatif de votre devis.')) ?> (Devis <strong><?= View::e($quote['quote_number']) ?></strong>, valable jusqu'au <?= View::date($quote['valid_until']) ?>.)</p>
   <table style="width:100%; border-collapse: collapse; margin:20px 0;">

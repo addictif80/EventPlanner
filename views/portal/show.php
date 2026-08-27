@@ -1,4 +1,4 @@
-<?php use App\Core\View; use App\Models\Client; ?>
+<?php use App\Core\View; use App\Models\Client; $logoUrl = org_logo_url($client['organization_id'] ?? null, $company ?? []); ?>
 <!doctype html>
 <html lang="fr">
 <head>
@@ -14,7 +14,10 @@
 <?php include __DIR__ . '/../partials/pwa_install_banner.php'; ?>
 <div class="container py-5">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
-    <h1 class="h4 mb-0">Bonjour <?= View::e(Client::displayName($client)) ?>,</h1>
+    <div>
+      <?php if ($logoUrl): ?><img src="<?= View::e($logoUrl) ?>" alt="" style="max-height:44px; max-width:180px; margin-bottom:8px; display:block;"><?php endif; ?>
+      <h1 class="h4 mb-0">Bonjour <?= View::e(Client::displayName($client)) ?>,</h1>
+    </div>
     <div class="d-flex align-items-center gap-2">
       <?php
       $notifFeedUrl = url('/portal/' . $token . '/notifications.json');

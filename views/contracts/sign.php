@@ -1,4 +1,4 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\View; $logoUrl = org_logo_url($contract['organization_id'] ?? null, $company ?? []); ?>
 <!doctype html>
 <html lang="fr">
 <head>
@@ -11,6 +11,7 @@
 <body class="bg-light">
 <div class="container py-5" style="max-width:700px;">
   <div class="card shadow-sm"><div class="card-body p-4">
+    <?php if ($logoUrl): ?><img src="<?= View::e($logoUrl) ?>" alt="" style="max-height:56px; max-width:200px; margin-bottom:12px;"><?php endif; ?>
     <h1 class="h4 mb-3"><?= View::e($contract['title']) ?></h1>
 
     <?php foreach ((flashes()['error'] ?? []) as $m): ?>
