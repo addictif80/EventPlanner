@@ -1,6 +1,8 @@
 <?php
 use App\Core\View;
 /** @var array $plans */
+/** @var array $headerItems */
+/** @var array $footerItems */
 ?>
 <!doctype html>
 <html lang="fr">
@@ -11,38 +13,11 @@ use App\Core\View;
 <meta name="description" content="EventPlanner centralise clients, devis, contrats, factures, invités et prestataires pour les organisateurs d'événements.">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<style>
-  body { color: #212529; }
-  .navbar-landing { background: #fff; border-bottom: 1px solid #e9ecef; }
-  .hero { background: #f8f9fa; }
-  .hero-mock { background: #fff; border: 1px solid #e9ecef; border-radius: .75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.06); }
-  .feature-card { border: 1px solid #e9ecef; border-radius: .5rem; height: 100%; }
-  .feature-icon { width: 2.75rem; height: 2.75rem; border-radius: .5rem; background: #eef2ff; color: #3b56d9; }
-  .plan-card { border: 1px solid #e9ecef; border-radius: .75rem; }
-  .plan-card.plan-highlight { border-color: #3b56d9; box-shadow: 0 .5rem 1.5rem rgba(59,86,217,.12); }
-  .cta-band { background: #3b56d9; color: #fff; }
-  .footer-landing { border-top: 1px solid #e9ecef; }
-  section { scroll-margin-top: 70px; }
-</style>
+<?php require dirname(__DIR__) . '/partials/site_styles.php'; ?>
 </head>
 <body>
 
-<nav class="navbar navbar-landing navbar-expand sticky-top py-3">
-  <div class="container d-flex align-items-center justify-content-between">
-    <a href="<?= url('/') ?>" class="d-flex align-items-center text-decoration-none text-dark">
-      <i class="bi bi-calendar-event fs-4 me-2 text-primary"></i>
-      <span class="fs-5 fw-semibold">EventPlanner</span>
-    </a>
-    <div class="d-none d-md-flex align-items-center gap-3">
-      <a href="#fonctionnalites" class="text-decoration-none text-secondary">Fonctionnalités</a>
-      <a href="#tarifs" class="text-decoration-none text-secondary">Tarifs</a>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-      <a href="<?= url('/login') ?>" class="btn btn-outline-secondary">Connexion</a>
-      <a href="<?= url('/register') ?>" class="btn btn-primary">Inscription</a>
-    </div>
-  </div>
-</nav>
+<?php require dirname(__DIR__) . '/partials/site_header.php'; ?>
 
 <header class="hero py-5">
   <div class="container py-4">
@@ -172,15 +147,7 @@ use App\Core\View;
   </div>
 </section>
 
-<footer class="footer-landing py-4">
-  <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-    <span class="text-secondary small"><i class="bi bi-calendar-event me-1"></i>EventPlanner &copy; <?= date('Y') ?></span>
-    <div class="d-flex gap-3 small">
-      <a href="<?= url('/login') ?>" class="text-secondary text-decoration-none">Connexion</a>
-      <a href="<?= url('/register') ?>" class="text-secondary text-decoration-none">Inscription</a>
-    </div>
-  </div>
-</footer>
+<?php require dirname(__DIR__) . '/partials/site_footer.php'; ?>
 
 </body>
 </html>
