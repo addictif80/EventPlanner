@@ -3,6 +3,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2 class="h5 mb-0">Billetterie — <?= View::e($event['title']) ?></h2>
   <div class="d-flex gap-2">
+    <a href="<?= url('/events/' . $event['id'] . '/tickets/send') ?>" class="btn btn-outline-primary btn-sm"><i class="bi bi-envelope-paper"></i> Envoyer les billets</a>
     <a href="<?= url('/events/' . $event['id'] . '/checkin') ?>" class="btn btn-outline-primary btn-sm"><i class="bi bi-qr-code-scan"></i> Check-in</a>
     <a href="<?= url('/events/' . $event['id']) ?>" class="btn btn-outline-secondary btn-sm">← Retour</a>
   </div>
