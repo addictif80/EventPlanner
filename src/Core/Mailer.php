@@ -19,9 +19,10 @@ class Mailer
 
     /**
      * @param string|array $to
+     * @param array<int,array{filename:string,mimeType:string,content:string}> $attachments
      * @throws \RuntimeException
      */
-    public static function send($to, string $subject, string $htmlBody, ?string $textBody = null): void
+    public static function send($to, string $subject, string $htmlBody, ?string $textBody = null, array $attachments = []): void
     {
         $settings = self::settings();
 
@@ -38,14 +39,20 @@ class Mailer
         ]);
 
         $recipients = is_array($to) ? $to : [$to];
+        $senderName = $settings['from_name'] ?: $settings['from_email'];
+
+        $company = \App\Models\CompanySettings::get();
+        $logoUrl = org_logo_url(Auth::organizationId(), $company) ?: null;
+        $brandColor = $company['brand_color'] ?? null;
 
         $client->send(
             $settings['from_email'],
-            $settings['from_name'] ?: $settings['from_email'],
+            $senderName,
             $recipients,
             $subject,
-            $htmlBody,
-            $textBody
+            EmailDesign::wrap($htmlBody, $senderName, $logoUrl, $brandColor),
+            $textBody,
+            $attachments
         );
     }
 
@@ -74,13 +81,14 @@ class Mailer
         ]);
 
         $recipients = is_array($to) ? $to : [$to];
+        $senderName = $settings['smtp_from_name'] ?: $settings['smtp_from_email'];
 
         $client->send(
             $settings['smtp_from_email'],
-            $settings['smtp_from_name'] ?: $settings['smtp_from_email'],
+            $senderName,
             $recipients,
             $subject,
-            $htmlBody,
+            EmailDesign::wrap($htmlBody, $senderName),
             $textBody
         );
     }

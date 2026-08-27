@@ -133,7 +133,7 @@ class ContractController
         $signerName = input('signer_name', '');
         $signatureData = $_POST['signature_data'] ?? '';
 
-        if ($signerName === '' || $signatureData === '') {
+        if ($signerName === '' || $signatureData === '' || !preg_match('/^data:image\/png;base64,[A-Za-z0-9+\/]+=*$/', $signatureData) || strlen($signatureData) > 500000) {
             Session::flash('error', 'Merci de renseigner votre nom et de signer dans le cadre prévu.');
             redirect('/sign/' . $token);
         }

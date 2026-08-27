@@ -3,7 +3,9 @@
 namespace App\Controllers;
 
 use App\Core\ActivityLog;
+use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Session;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -39,7 +41,8 @@ class PaymentController
     public static function destroy(string $invoiceId, string $paymentId): void
     {
         Csrf::verifyOrFail();
-        Payment::delete((int) $paymentId);
+        Database::connection()->prepare('DELETE FROM payments WHERE id = ? AND invoice_id = ? AND organization_id = ?')
+            ->execute([$paymentId, $invoiceId, Auth::organizationId()]);
         Invoice::recalculatePaidStatus((int) $invoiceId);
         Session::flash('success', 'Paiement supprimé.');
         redirect('/invoices/' . $invoiceId);

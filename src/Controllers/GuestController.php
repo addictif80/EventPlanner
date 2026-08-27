@@ -181,7 +181,8 @@ class GuestController
     {
         ModuleAccess::requireModule('guests');
         Csrf::verifyOrFail();
-        EventTable::delete((int) $tableId);
+        Database::connection()->prepare('DELETE FROM event_tables WHERE id = ? AND event_id = ? AND organization_id = ?')
+            ->execute([$tableId, $eventId, Auth::organizationId()]);
         Session::flash('success', 'Table supprimée.');
         redirect('/events/' . $eventId . '/guests');
     }
