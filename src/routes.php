@@ -47,6 +47,7 @@ use App\Controllers\AccountController;
 use App\Controllers\ClientMessageController;
 use App\Controllers\NotificationController;
 use App\Controllers\OrgLogoController;
+use App\Controllers\SearchController;
 
 $router = new Router();
 
@@ -158,6 +159,8 @@ $router->post('/settings/organization/delete', fn() => SettingsController::destr
 $router->get('/account', fn() => AccountController::show());
 $router->get('/account/export.json', fn() => AccountController::exportData());
 $router->post('/account/delete', fn() => AccountController::destroy());
+
+$router->get('/search.json', fn() => SearchController::search());
 
 $router->get('/notifications.json', fn() => NotificationController::userFeed());
 $router->post('/notifications/{id}/read', fn($p) => NotificationController::userMarkRead($p['id']));
