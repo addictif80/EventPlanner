@@ -40,6 +40,14 @@ $flashes = flashes();
       <h1 class="h5 mb-0"><?= View::e($title ?? '') ?></h1>
       <div class="d-flex align-items-center gap-3">
         <?php if ($user): ?>
+        <?php
+        $notifFeedUrl = url('/admin/notifications.json');
+        $notifMarkReadUrl = url('/admin/notifications/__ID__/read');
+        $notifMarkAllUrl = url('/admin/notifications/read-all');
+        $notifPushSubscribeUrl = url('/admin/push/subscribe');
+        $notifVapidKeyUrl = url('/push/vapid-public-key.json');
+        include __DIR__ . '/../partials/notification_bell.php';
+        ?>
         <span class="text-muted small"><?= View::e($user['name']) ?> · super admin</span>
         <a href="<?= url('/logout') ?>" class="btn btn-sm btn-outline-secondary">Déconnexion</a>
         <?php endif; ?>

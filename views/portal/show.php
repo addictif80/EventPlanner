@@ -6,13 +6,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Espace client — <?= View::e(Client::displayName($client)) ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>.chat-thread{height:280px;overflow-y:auto;background:#fff;} .chat-msg{max-width:80%;} .chat-msg.mine{margin-left:auto;}</style>
 </head>
 <body class="bg-light">
 <div class="container py-5">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
     <h1 class="h4 mb-0">Bonjour <?= View::e(Client::displayName($client)) ?>,</h1>
-    <a href="<?= url('/portal/' . $token . '/export.json') ?>" class="btn btn-outline-secondary btn-sm">Exporter mes données</a>
+    <div class="d-flex align-items-center gap-2">
+      <?php
+      $notifFeedUrl = url('/portal/' . $token . '/notifications.json');
+      $notifMarkReadUrl = url('/portal/' . $token . '/notifications/__ID__/read');
+      $notifMarkAllUrl = url('/portal/' . $token . '/notifications/read-all');
+      $notifPushSubscribeUrl = url('/portal/' . $token . '/push/subscribe');
+      $notifVapidKeyUrl = url('/push/vapid-public-key.json');
+      include __DIR__ . '/../partials/notification_bell.php';
+      ?>
+      <a href="<?= url('/portal/' . $token . '/export.json') ?>" class="btn btn-outline-secondary btn-sm">Exporter mes données</a>
+    </div>
   </div>
 
   <?php if (!empty($client['deletion_requested_at'])): ?>

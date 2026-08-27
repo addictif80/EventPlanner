@@ -104,6 +104,14 @@ class PortalController
         if ($quote && $quote['status'] === 'sent') {
             $pdo->prepare('UPDATE quotes SET status = ? WHERE id = ? AND organization_id = ?')
                 ->execute([$status, $quoteId, $client['organization_id']]);
+
+            \App\Models\Notification::toOrganization(
+                $client['organization_id'],
+                'quote',
+                $status === 'accepted' ? 'Devis accepté' : 'Devis refusé',
+                \App\Models\Client::displayName($client) . ' a ' . ($status === 'accepted' ? 'accepté' : 'refusé') . ' le devis.',
+                '/quotes/' . $quoteId
+            );
         }
 
         redirect('/portal/' . $token);
@@ -169,6 +177,15 @@ class PortalController
         Database::connection()
             ->prepare('UPDATE clients SET deletion_requested_at = NOW() WHERE id = ? AND organization_id = ?')
             ->execute([$client['id'], $client['organization_id']]);
+
+        \App\Models\Notification::toOrganization(
+            $client['organization_id'],
+            'rgpd',
+            'Demande de suppression de données',
+            \App\Models\Client::displayName($client) . ' a demandé la suppression de ses données.',
+            '/clients/' . $client['id'],
+            ['admin']
+        );
 
         View::render('portal/erasure_requested', [], layout: null);
     }

@@ -71,6 +71,14 @@ $flashes = flashes();
       <h1 class="h5 mb-0"><?= View::e($title ?? '') ?></h1>
       <div class="d-flex align-items-center gap-3">
         <?php if ($user): ?>
+        <?php
+        $notifFeedUrl = url('/notifications.json');
+        $notifMarkReadUrl = url('/notifications/__ID__/read');
+        $notifMarkAllUrl = url('/notifications/read-all');
+        $notifPushSubscribeUrl = url('/push/subscribe');
+        $notifVapidKeyUrl = url('/push/vapid-public-key.json');
+        include __DIR__ . '/../partials/notification_bell.php';
+        ?>
         <span class="text-muted small"><?= View::e($user['name']) ?> · <?= View::e($user['role']) ?></span>
         <a href="<?= url('/account') ?>" class="btn btn-sm btn-outline-secondary">Mon compte</a>
         <a href="<?= url('/logout') ?>" class="btn btn-sm btn-outline-secondary">Déconnexion</a>

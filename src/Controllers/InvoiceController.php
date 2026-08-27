@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\ActivityLog;
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Mailer;
 use App\Core\ModuleAccess;
@@ -218,6 +219,13 @@ class InvoiceController
             if ($invoice['status'] === 'draft') {
                 \App\Models\Invoice::update((int) $id, ['status' => 'sent']);
             }
+            \App\Models\Notification::toClient(
+                (int) $invoice['client_id'],
+                Auth::organizationId(),
+                'invoice',
+                'Nouvelle facture',
+                'La facture ' . $invoice['invoice_number'] . ' (' . \App\Core\View::money((float) $invoice['total']) . ') vous a été envoyée.'
+            );
             Session::flash('success', 'Facture envoyée par email à ' . $invoice['client_email']);
         } catch (\RuntimeException $e) {
             Session::flash('error', "Échec de l'envoi : " . $e->getMessage());

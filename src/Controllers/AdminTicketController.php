@@ -74,6 +74,17 @@ class AdminTicketController
             }
         }
 
+        if (!empty($ticket['user_id'])) {
+            \App\Models\Notification::toUser(
+                (int) $ticket['user_id'],
+                (int) $ticket['organization_id'],
+                'ticket',
+                'Réponse à votre ticket',
+                $ticket['subject'],
+                '/support/' . $id
+            );
+        }
+
         AdminActivityLog::record('ticket_reply', 'support_ticket', (int) $id, $ticket['subject']);
         Session::flash('success', 'Réponse envoyée.');
         redirect('/admin/tickets/' . $id);

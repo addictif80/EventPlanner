@@ -158,6 +158,13 @@ class QuoteController
         try {
             Mailer::send($quote['client_email'], $subject, $html);
             Quote::update((int) $id, ['status' => $quote['status'] === 'draft' ? 'sent' : $quote['status']]);
+            \App\Models\Notification::toClient(
+                (int) $quote['client_id'],
+                Auth::organizationId(),
+                'quote',
+                'Nouveau devis',
+                'Le devis ' . $quote['quote_number'] . ' vous a été envoyé.'
+            );
             Session::flash('success', 'Devis envoyé par email à ' . $quote['client_email']);
         } catch (\RuntimeException $e) {
             Session::flash('error', "Échec de l'envoi : " . $e->getMessage());

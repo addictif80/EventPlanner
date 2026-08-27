@@ -45,6 +45,7 @@ use App\Controllers\PageController;
 use App\Controllers\AdminSiteController;
 use App\Controllers\AccountController;
 use App\Controllers\ClientMessageController;
+use App\Controllers\NotificationController;
 
 $router = new Router();
 
@@ -155,6 +156,13 @@ $router->post('/settings/organization/delete', fn() => SettingsController::destr
 $router->get('/account', fn() => AccountController::show());
 $router->get('/account/export.json', fn() => AccountController::exportData());
 $router->post('/account/delete', fn() => AccountController::destroy());
+
+$router->get('/notifications.json', fn() => NotificationController::userFeed());
+$router->post('/notifications/{id}/read', fn($p) => NotificationController::userMarkRead($p['id']));
+$router->post('/notifications/read-all', fn() => NotificationController::userMarkAllRead());
+$router->post('/push/subscribe', fn() => NotificationController::userSubscribe());
+$router->post('/push/unsubscribe', fn() => NotificationController::userUnsubscribe());
+$router->get('/push/vapid-public-key.json', fn() => NotificationController::vapidPublicKey());
 
 // Users (admin only)
 $router->get('/users', fn() => UserController::index());
@@ -330,6 +338,11 @@ $router->post('/admin/menu', fn() => AdminSiteController::storeMenuItem());
 $router->post('/admin/menu/{id}', fn($p) => AdminSiteController::updateMenuItem($p['id']));
 $router->post('/admin/menu/{id}/delete', fn($p) => AdminSiteController::destroyMenuItem($p['id']));
 
+$router->get('/admin/notifications.json', fn() => NotificationController::platformFeed());
+$router->post('/admin/notifications/{id}/read', fn($p) => NotificationController::platformMarkRead($p['id']));
+$router->post('/admin/notifications/read-all', fn() => NotificationController::platformMarkAllRead());
+$router->post('/admin/push/subscribe', fn() => NotificationController::platformSubscribe());
+
 // --- Routes publiques (sans authentification) ---
 $router->get('/rsvp/{token}', fn($p) => GuestController::rsvpForm($p['token']));
 $router->post('/rsvp/{token}', fn($p) => GuestController::rsvpSubmit($p['token']));
@@ -346,6 +359,10 @@ $router->get('/portal/{token}/export.json', fn($p) => PortalController::exportDa
 $router->post('/portal/{token}/erasure-request', fn($p) => PortalController::requestErasure($p['token']));
 $router->get('/portal/{token}/messages.json', fn($p) => ClientMessageController::portalPoll($p['token']));
 $router->post('/portal/{token}/messages', fn($p) => ClientMessageController::portalSend($p['token']));
+$router->get('/portal/{token}/notifications.json', fn($p) => NotificationController::portalFeed($p['token']));
+$router->post('/portal/{token}/notifications/{id}/read', fn($p) => NotificationController::portalMarkRead($p['token'], $p['id']));
+$router->post('/portal/{token}/notifications/read-all', fn($p) => NotificationController::portalMarkAllRead($p['token']));
+$router->post('/portal/{token}/push/subscribe', fn($p) => NotificationController::portalSubscribe($p['token']));
 $router->get('/calendar/{token}.ics', fn($p) => CalendarController::feed($p['token']));
 
 return $router;

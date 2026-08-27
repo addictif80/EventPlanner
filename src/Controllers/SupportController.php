@@ -52,6 +52,8 @@ class SupportController
             'body' => $body,
         ]);
 
+        \App\Models\Notification::toPlatform('ticket', 'Nouveau ticket support', $subject, '/admin/tickets/' . $id);
+
         Session::flash('success', 'Ticket envoyé, notre équipe vous répondra rapidement.');
         redirect('/support/' . $id);
     }
