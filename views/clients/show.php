@@ -17,6 +17,16 @@
   </div>
 </div>
 
+<?php if (!empty($client['deletion_requested_at'])): ?>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2"></i>Ce client a demandé la suppression de ses données le <?= View::date($client['deletion_requested_at'], 'd/m/Y à H:i') ?>. Vérifiez vos obligations légales de conservation (notamment comptables sur les factures) avant de supprimer sa fiche.</span>
+    <form method="post" action="<?= url('/clients/' . $client['id'] . '/erasure-request/dismiss') ?>" class="ms-3">
+      <?= csrf_field() ?>
+      <button class="btn btn-sm btn-outline-dark">Marquer comme traitée</button>
+    </form>
+  </div>
+<?php endif; ?>
+
 <div class="row g-3 mb-4">
   <div class="col-md-6">
     <div class="card h-100"><div class="card-body">
@@ -103,3 +113,62 @@
   <?php endif; ?>
   <?php endif; ?>
 </div>
+
+<div class="row g-3 mt-1">
+  <div class="col-md-8">
+    <div class="card" id="messages">
+      <div class="card-header">Messages avec le client</div>
+      <div class="card-body">
+        <div id="chat-thread" class="border rounded p-2 mb-2 d-flex flex-column gap-2" style="height:280px; overflow-y:auto; background:#fff;"></div>
+        <form id="chat-form" method="post" action="<?= url('/clients/' . $client['id'] . '/messages') ?>" class="d-flex gap-2">
+          <?= csrf_field() ?>
+          <input type="text" name="body" class="form-control" placeholder="Votre message..." required autocomplete="off">
+          <button class="btn btn-primary">Envoyer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var thread = document.getElementById('chat-thread');
+  var form = document.getElementById('chat-form');
+  var pollUrl = <?= json_encode(url('/clients/' . $client['id'] . '/messages.json')) ?>;
+
+  function render(messages) {
+    thread.innerHTML = '';
+    messages.forEach(function (m) {
+      var div = document.createElement('div');
+      div.className = 'p-2 rounded ' + (m.sender_type === 'staff' ? 'bg-primary text-white' : 'bg-light border');
+      div.style.maxWidth = '80%';
+      if (m.sender_type === 'staff') { div.style.marginLeft = 'auto'; }
+      var author = document.createElement('div');
+      author.className = 'small ' + (m.sender_type === 'staff' ? 'text-white-50' : 'text-muted');
+      author.textContent = m.author;
+      var body = document.createElement('div');
+      body.textContent = m.body;
+      div.appendChild(author);
+      div.appendChild(body);
+      thread.appendChild(div);
+    });
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function poll() {
+    fetch(pollUrl).then(function (r) { return r.json(); }).then(render).catch(function () {});
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var data = new FormData(form);
+    fetch(form.action, { method: 'POST', body: data }).then(function () {
+      form.reset();
+      poll();
+    });
+  });
+
+  poll();
+  setInterval(poll, 4000);
+})();
+</script>

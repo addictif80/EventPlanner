@@ -17,6 +17,82 @@ use App\Models\Invoice;
  */
 class StripeController
 {
+    /**
+     * Public, unauthenticated: a client pays their own invoice from the
+     * portal (no Auth session). The organization is re-derived from the
+     * portal token, exactly as PortalController::show() does, and the
+     * client can only pay an invoice that belongs to their own client row.
+     */
+    public static function createPortalPaymentLink(string $token, string $invoiceId): void
+    {
+        Csrf::verifyOrFail();
+
+        $pdo = Database::connection();
+
+        $stmt = $pdo->prepare('SELECT * FROM client_portal_tokens WHERE token = ? AND expires_at > NOW() LIMIT 1');
+        $stmt->execute([$token]);
+        $portalToken = $stmt->fetch();
+        if (!$portalToken) {
+            http_response_code(404);
+            die('Lien invalide ou expiré.');
+        }
+
+        $orgId = $portalToken['organization_id'];
+
+        $stmt = $pdo->prepare('SELECT * FROM invoices WHERE id = ? AND client_id = ? AND organization_id = ? LIMIT 1');
+        $stmt->execute([$invoiceId, $portalToken['client_id'], $orgId]);
+        $invoice = $stmt->fetch();
+
+        if (!$invoice || !\App\Core\ModuleAccess::has('stripe_payments', $orgId)) {
+            http_response_code(404);
+            die('Facture introuvable ou paiement en ligne non disponible.');
+        }
+
+        $stmt = $pdo->prepare('SELECT stripe_secret_key, currency FROM company_settings WHERE organization_id = ?');
+        $stmt->execute([$orgId]);
+        $company = $stmt->fetch() ?: [];
+
+        if (empty($company['stripe_secret_key'])) {
+            die("Le paiement en ligne n'est pas configuré pour cet organisateur.");
+        }
+
+        $remaining = (float) $invoice['total'] - (float) $invoice['amount_paid'];
+        if ($remaining <= 0) {
+            redirect('/portal/' . $token);
+        }
+
+        $baseUrl = ($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+        $params = [
+            'payment_method_types' => ['card'],
+            'mode' => 'payment',
+            'success_url' => $baseUrl . url('/stripe/return/' . $invoiceId) . '?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => $baseUrl . url('/portal/' . $token),
+            'metadata' => [
+                'invoice_id' => (string) $invoiceId,
+                'organization_id' => (string) $orgId,
+            ],
+            'line_items' => [[
+                'quantity' => 1,
+                'price_data' => [
+                    'currency' => strtolower($invoice['currency'] ?? $company['currency'] ?? 'eur'),
+                    'unit_amount' => (int) round($remaining * 100),
+                    'product_data' => ['name' => 'Facture ' . $invoice['invoice_number']],
+                ],
+            ]],
+        ];
+
+        try {
+            $session = self::request($company['stripe_secret_key'], 'checkout/sessions', $params);
+            if (!empty($session['url'])) {
+                header('Location: ' . $session['url']);
+                exit;
+            }
+            die('Réponse Stripe invalide : ' . ($session['error']['message'] ?? 'erreur inconnue'));
+        } catch (\RuntimeException $e) {
+            die('Erreur Stripe : ' . htmlspecialchars($e->getMessage()));
+        }
+    }
+
     public static function createPaymentLink(string $id): void
     {
         ModuleAccess::requireModule('stripe_payments');

@@ -26,7 +26,12 @@
         <?php endif; ?>
         <?php foreach ($clients as $client): ?>
         <tr>
-          <td><a href="<?= url('/clients/' . $client['id']) ?>"><?= View::e(Client::displayName($client)) ?></a></td>
+          <td>
+            <a href="<?= url('/clients/' . $client['id']) ?>"><?= View::e(Client::displayName($client)) ?></a>
+            <?php if (!empty($client['deletion_requested_at'])): ?>
+              <span class="badge bg-warning text-dark ms-1" title="Demande de suppression de données">RGPD</span>
+            <?php endif; ?>
+          </td>
           <td><span class="badge bg-secondary-subtle text-dark"><?= View::e($client['type']) ?></span></td>
           <td><?= View::e($client['email']) ?></td>
           <td><?= View::e($client['phone']) ?></td>

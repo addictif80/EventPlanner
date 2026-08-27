@@ -29,8 +29,15 @@
           <label class="form-label">Régime alimentaire particulier / allergies</label>
           <textarea name="dietary_notes" class="form-control" rows="2"><?= View::e($guest['dietary_notes']) ?></textarea>
         </div>
+        <?= csrf_field() ?>
         <button class="btn btn-primary w-100">Confirmer ma réponse</button>
       </form>
+      <?php if (!empty($guest['responded_at'])): ?>
+        <form method="post" action="<?= url('/rsvp/' . $guest['rsvp_token'] . '/delete') ?>" class="mt-2" onsubmit="return confirm('Supprimer définitivement votre réponse et vos données liées à cette invitation ?');">
+          <?= csrf_field() ?>
+          <button class="btn btn-link btn-sm text-danger w-100">Supprimer mes données</button>
+        </form>
+      <?php endif; ?>
     </div>
   </div>
 </div>
