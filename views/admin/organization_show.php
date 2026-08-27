@@ -3,6 +3,9 @@
   <div>
     <h2 class="h5 mb-0"><?= View::e($organization['name']) ?></h2>
     <span class="badge bg-<?= $organization['status'] === 'suspended' ? 'danger' : 'success' ?>"><?= View::e($organization['status']) ?></span>
+    <?php if ($organization['status'] === 'suspended' && !empty($organization['suspension_reason'])): ?>
+      <span class="badge bg-secondary"><?= $organization['suspension_reason'] === 'non_payment' ? 'Impayé (automatique)' : 'Suspension manuelle' ?></span>
+    <?php endif; ?>
   </div>
   <form method="post" action="<?= url('/admin/organizations/' . $organization['id'] . '/status') ?>" onsubmit="return confirm('Confirmer le changement de statut de cette organisation ?');">
     <?= csrf_field() ?>
@@ -23,6 +26,9 @@
         &middot; Statut : <span class="badge bg-secondary"><?= View::e($subscription['status']) ?></span>
         <?php if ($subscription['stripe_subscription_id']): ?> &middot; <span class="text-muted small">Facturé via Stripe</span><?php endif; ?>
       </p>
+      <?php if ($subscription['status'] === 'past_due' && !empty($subscription['past_due_since'])): ?>
+        <p class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Impayé depuis le <?= View::date($subscription['past_due_since'], 'd/m/Y') ?> (<?= (int) floor((time() - strtotime($subscription['past_due_since'])) / 86400) ?> jour(s)).</p>
+      <?php endif; ?>
     <?php else: ?>
       <p class="text-muted mb-2">Aucun abonnement enregistré pour cette organisation.</p>
     <?php endif; ?>

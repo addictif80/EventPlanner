@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(190) NOT NULL,
     status ENUM('active', 'suspended') NOT NULL DEFAULT 'active',
+    suspension_reason VARCHAR(20) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -42,7 +43,9 @@ CREATE TABLE IF NOT EXISTS system_settings (
     stripe_publishable_key VARCHAR(190) DEFAULT '',
     stripe_webhook_secret VARCHAR(190) DEFAULT '',
     vapid_public_key VARCHAR(255) DEFAULT '',
-    vapid_private_key VARCHAR(255) DEFAULT ''
+    vapid_private_key VARCHAR(255) DEFAULT '',
+    subscription_auto_suspend_enabled TINYINT(1) NOT NULL DEFAULT 0,
+    subscription_grace_period_days INT UNSIGNED NOT NULL DEFAULT 7
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -761,6 +764,7 @@ CREATE TABLE IF NOT EXISTS organization_subscriptions (
     stripe_subscription_id VARCHAR(120) DEFAULT '',
     current_period_end DATETIME DEFAULT NULL,
     cancel_at_period_end TINYINT(1) NOT NULL DEFAULT 0,
+    past_due_since DATETIME DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_org_sub_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,

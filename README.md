@@ -177,6 +177,10 @@ qu'un site CyberPanel crée pour sa base de données).
 # Alertes métier proactives (devis sans réponse, facture bientôt échue,
 # acompte manquant, double réservation de lieu), tous les jours à 8h
 0 8 * * * php /chemin/vers/EventPlanner/bin/send_business_alerts.php
+
+# Suspension automatique des organisations impayées (désactivée par défaut,
+# à activer dans Super admin > Paramètres système > Facturation), tous les jours à 7h
+0 7 * * * php /chemin/vers/EventPlanner/bin/suspend_unpaid_organizations.php
 ```
 
 ## Fonctionnalités couvertes

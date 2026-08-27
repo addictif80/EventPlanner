@@ -7,7 +7,10 @@
       <?php foreach ($organizations as $org): ?>
         <tr>
           <td><a href="<?= url('/admin/organizations/' . $org['id']) ?>"><?= View::e($org['name']) ?></a></td>
-          <td><span class="badge bg-<?= $org['status'] === 'suspended' ? 'danger' : 'success' ?>"><?= View::e($org['status']) ?></span></td>
+          <td>
+            <span class="badge bg-<?= $org['status'] === 'suspended' ? 'danger' : 'success' ?>"><?= View::e($org['status']) ?></span>
+            <?php if ($org['subscription_status'] === 'past_due'): ?><span class="badge bg-warning text-dark">Impayé</span><?php endif; ?>
+          </td>
           <td><?= (int) $org['user_count'] ?></td>
           <td><?= (int) $org['event_count'] ?></td>
           <td><?= View::date($org['created_at'], 'd/m/Y') ?></td>

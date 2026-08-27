@@ -55,8 +55,11 @@ class AdminController
         $stmt = Database::connection()->query(
             'SELECT organizations.*,
                     (SELECT COUNT(*) FROM users WHERE users.organization_id = organizations.id) AS user_count,
-                    (SELECT COUNT(*) FROM events WHERE events.organization_id = organizations.id) AS event_count
-             FROM organizations ORDER BY organizations.created_at DESC'
+                    (SELECT COUNT(*) FROM events WHERE events.organization_id = organizations.id) AS event_count,
+                    os.status AS subscription_status
+             FROM organizations
+             LEFT JOIN organization_subscriptions os ON os.organization_id = organizations.id
+             ORDER BY organizations.created_at DESC'
         );
 
         View::render('admin/organizations', ['title' => 'Organisations', 'organizations' => $stmt->fetchAll()]);
@@ -111,7 +114,7 @@ class AdminController
         if (!$organization) { http_response_code(404); die('Organisation introuvable.'); }
 
         $newStatus = $organization['status'] === 'suspended' ? 'active' : 'suspended';
-        Organization::update((int) $id, ['status' => $newStatus]);
+        Organization::update((int) $id, ['status' => $newStatus, 'suspension_reason' => $newStatus === 'suspended' ? 'manual' : null]);
 
         AdminActivityLog::record(
             $newStatus === 'suspended' ? 'organization_suspended' : 'organization_reactivated',

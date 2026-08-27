@@ -54,6 +54,8 @@ class AdminSettingsController
         $data = [
             'stripe_publishable_key' => input('stripe_publishable_key', ''),
             'stripe_webhook_secret' => input('stripe_webhook_secret', ''),
+            'subscription_auto_suspend_enabled' => input('subscription_auto_suspend_enabled') ? 1 : 0,
+            'subscription_grace_period_days' => max(1, (int) input('subscription_grace_period_days', 7)),
         ];
 
         $secretKey = input('stripe_secret_key', '');

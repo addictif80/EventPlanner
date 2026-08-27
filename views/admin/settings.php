@@ -50,6 +50,21 @@
         événements <code>checkout.session.completed</code>, <code>customer.subscription.updated</code>,
         <code>customer.subscription.deleted</code>, <code>invoice.payment_failed</code>.
       </p>
+
+      <hr class="my-4">
+      <h3 class="h6">Suspension automatique pour impayé</h3>
+      <p class="text-muted small">Si activé, une organisation dont l'abonnement reste en statut « impayé » (échec de prélèvement Stripe) au-delà du délai ci-dessous est automatiquement suspendue (accès bloqué à la connexion, sauf super admin). La suspension est levée automatiquement dès que le paiement est régularisé. Nécessite la tâche planifiée <code>bin/suspend_unpaid_organizations.php</code> (voir README).</p>
+      <div class="form-check form-switch mb-2">
+        <input type="checkbox" class="form-check-input" id="subscription_auto_suspend_enabled" name="subscription_auto_suspend_enabled" value="1" <?= !empty($settings['subscription_auto_suspend_enabled']) ? 'checked' : '' ?>>
+        <label class="form-check-label" for="subscription_auto_suspend_enabled">Suspendre automatiquement les organisations impayées</label>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Délai de grâce (jours)</label>
+          <input type="number" min="1" name="subscription_grace_period_days" class="form-control" value="<?= View::e((string)($settings['subscription_grace_period_days'] ?? 7)) ?>">
+        </div>
+      </div>
+
       <button class="btn btn-primary mt-3">Enregistrer</button>
     </form>
   </div>
