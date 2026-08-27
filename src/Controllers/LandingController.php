@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\View;
 use App\Models\Plan;
+use App\Models\SiteMenuItem;
 
 class LandingController
 {
@@ -15,8 +16,10 @@ class LandingController
             return;
         }
 
-        $plans = Plan::activeOrdered();
-
-        View::render('landing/index', ['plans' => $plans], layout: null);
+        View::render('landing/index', [
+            'plans' => Plan::activeOrdered(),
+            'headerItems' => SiteMenuItem::activeForLocation('header'),
+            'footerItems' => SiteMenuItem::activeForLocation('footer'),
+        ], layout: null);
     }
 }

@@ -41,6 +41,8 @@ use App\Controllers\AdminOfferController;
 use App\Controllers\SupportController;
 use App\Controllers\SubscriptionController;
 use App\Controllers\LandingController;
+use App\Controllers\PageController;
+use App\Controllers\AdminSiteController;
 
 $router = new Router();
 
@@ -58,6 +60,7 @@ $router->post('/register', fn() => RegisterController::register());
 // but dispatches to the dashboard for already-authenticated users.
 
 $router->get('/', fn() => LandingController::index());
+$router->get('/page/{slug}', fn($p) => PageController::show($p['slug']));
 
 // Clients
 $router->get('/clients', fn() => ClientController::index());
@@ -306,6 +309,16 @@ $router->get('/admin/settings', fn() => AdminSettingsController::index());
 $router->post('/admin/settings/smtp', fn() => AdminSettingsController::updateSmtp());
 $router->post('/admin/settings/smtp/test', fn() => AdminSettingsController::testSmtp());
 $router->post('/admin/settings/billing', fn() => AdminSettingsController::updateBilling());
+
+$router->get('/admin/pages', fn() => AdminSiteController::index());
+$router->get('/admin/pages/create', fn() => AdminSiteController::createPage());
+$router->post('/admin/pages', fn() => AdminSiteController::storePage());
+$router->get('/admin/pages/{id}/edit', fn($p) => AdminSiteController::editPage($p['id']));
+$router->post('/admin/pages/{id}', fn($p) => AdminSiteController::updatePage($p['id']));
+$router->post('/admin/pages/{id}/delete', fn($p) => AdminSiteController::destroyPage($p['id']));
+$router->post('/admin/menu', fn() => AdminSiteController::storeMenuItem());
+$router->post('/admin/menu/{id}', fn($p) => AdminSiteController::updateMenuItem($p['id']));
+$router->post('/admin/menu/{id}/delete', fn($p) => AdminSiteController::destroyMenuItem($p['id']));
 
 // --- Routes publiques (sans authentification) ---
 $router->get('/rsvp/{token}', fn($p) => GuestController::rsvpForm($p['token']));
