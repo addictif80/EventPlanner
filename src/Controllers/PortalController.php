@@ -66,6 +66,19 @@ class PortalController
         $stmt->execute([$client['id'], $orgId]);
         $invoices = $stmt->fetchAll();
 
+        // Contracts indexed by quote_id: lets the portal show, right next to
+        // each quote, whether its contract still needs signing — the single
+        // portal link doubling as the hub for accept devis -> sign contrat ->
+        // pay acompte, instead of three separate emailed links.
+        $stmt = $pdo->prepare('SELECT * FROM contracts WHERE client_id = ? AND organization_id = ? ORDER BY created_at DESC');
+        $stmt->execute([$client['id'], $orgId]);
+        $contractsByQuote = [];
+        foreach ($stmt->fetchAll() as $contract) {
+            if ($contract['quote_id'] !== null && !isset($contractsByQuote[$contract['quote_id']])) {
+                $contractsByQuote[$contract['quote_id']] = $contract;
+            }
+        }
+
         $companyStmt = $pdo->prepare('SELECT * FROM company_settings WHERE organization_id = ?');
         $companyStmt->execute([$orgId]);
 
@@ -74,6 +87,7 @@ class PortalController
             'events' => $events,
             'quotes' => $quotes,
             'invoices' => $invoices,
+            'contractsByQuote' => $contractsByQuote,
             'token' => $token,
             'company' => $companyStmt->fetch() ?: [],
             'stripeAvailable' => \App\Core\ModuleAccess::has('stripe_payments', $orgId),

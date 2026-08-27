@@ -35,6 +35,40 @@
     <div class="alert alert-info small">Votre demande de suppression de données a bien été transmise à l'organisateur.</div>
   <?php endif; ?>
 
+  <?php
+  // "Prochaine étape" : devis accepté sans contrat signé, sinon acompte impayé.
+  $nextStepContract = null;
+  foreach ($quotes as $q) {
+    if ($q['status'] === 'accepted' && isset($contractsByQuote[$q['id']]) && $contractsByQuote[$q['id']]['status'] !== 'signed' && !empty($contractsByQuote[$q['id']]['sign_token'])) {
+      $nextStepContract = $contractsByQuote[$q['id']];
+      break;
+    }
+  }
+  $nextStepInvoice = null;
+  if (!$nextStepContract) {
+    foreach ($invoices as $inv) {
+      if ($inv['type'] === 'deposit' && in_array($inv['status'], ['sent', 'overdue', 'partially_paid'], true)) {
+        $nextStepInvoice = $inv;
+        break;
+      }
+    }
+  }
+  ?>
+  <?php if ($nextStepContract): ?>
+    <div class="alert alert-primary d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-pen me-2"></i>Prochaine étape : signez votre contrat pour confirmer votre événement.</span>
+      <a href="<?= url('/sign/' . $nextStepContract['sign_token']) ?>" class="btn btn-primary btn-sm">Signer maintenant</a>
+    </div>
+  <?php elseif ($nextStepInvoice && $stripeAvailable): ?>
+    <div class="alert alert-primary d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-cash-coin me-2"></i>Prochaine étape : réglez votre acompte pour confirmer votre événement.</span>
+      <form method="post" action="<?= url('/portal/' . $token . '/invoices/' . $nextStepInvoice['id'] . '/pay') ?>" class="mb-0">
+        <?= csrf_field() ?>
+        <button class="btn btn-primary btn-sm">Payer l'acompte (<?= View::money((float) $nextStepInvoice['total'] - (float) $nextStepInvoice['amount_paid']) ?>)</button>
+      </form>
+    </div>
+  <?php endif; ?>
+
   <div class="row g-3">
     <div class="col-md-4">
       <div class="card"><div class="card-body">
@@ -66,6 +100,17 @@
                     <?= csrf_field() ?>
                     <button class="btn btn-sm btn-outline-danger">Refuser</button>
                   </form>
+                </div>
+              <?php endif; ?>
+              <?php if ($q['status'] === 'accepted' && isset($contractsByQuote[$q['id']])): $c = $contractsByQuote[$q['id']]; ?>
+                <div class="mt-1">
+                  <?php if ($c['status'] === 'signed'): ?>
+                    <span class="badge bg-success"><i class="bi bi-check2-circle"></i> Contrat signé</span>
+                  <?php elseif (!empty($c['sign_token'])): ?>
+                    <a href="<?= url('/sign/' . $c['sign_token']) ?>" class="btn btn-sm btn-primary">Signer le contrat</a>
+                  <?php else: ?>
+                    <span class="badge bg-light text-dark">Contrat en préparation</span>
+                  <?php endif; ?>
                 </div>
               <?php endif; ?>
             </li>
