@@ -113,11 +113,16 @@ class ContractController
     {
         $contract = Contract::findByToken($token);
         if (!$contract) { http_response_code(404); die('Lien invalide ou expiré.'); }
+
+        $stmt = Database::connection()->prepare('SELECT * FROM company_settings WHERE organization_id = ?');
+        $stmt->execute([$contract['organization_id']]);
+        $company = $stmt->fetch() ?: [];
+
         if ($contract['status'] === 'signed') {
-            View::render('contracts/signed_already', ['contract' => $contract], layout: null);
+            View::render('contracts/signed_already', ['contract' => $contract, 'company' => $company], layout: null);
             return;
         }
-        View::render('contracts/sign', ['contract' => $contract], layout: null);
+        View::render('contracts/sign', ['contract' => $contract, 'company' => $company], layout: null);
     }
 
     public static function signSubmit(string $token): void

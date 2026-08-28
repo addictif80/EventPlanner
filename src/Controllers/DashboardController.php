@@ -48,6 +48,46 @@ class DashboardController
             'upcomingEvents' => Event::upcoming(6),
             'recentQuotes' => $recentQuotes,
             'overdueInvoices' => $overdueInvoices,
+            'requiredActions' => self::requiredActions($pdo, $orgId),
         ]);
+    }
+
+    /** "Actions requises" widget: everything currently waiting on staff attention, across the app. */
+    private static function requiredActions(\PDO $pdo, int $orgId): array
+    {
+        $actions = [];
+
+        $stmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM quotes WHERE organization_id = ? AND status = 'sent' AND updated_at <= DATE_SUB(NOW(), INTERVAL 5 DAY)"
+        );
+        $stmt->execute([$orgId]);
+        if ($n = (int) $stmt->fetchColumn()) {
+            $actions[] = ['label' => 'Devis à relancer (sans réponse depuis 5+ jours)', 'count' => $n, 'url' => url('/quotes'), 'icon' => 'bi-file-earmark-text'];
+        }
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM invoices WHERE organization_id = ? AND status = 'overdue'");
+        $stmt->execute([$orgId]);
+        if ($n = (int) $stmt->fetchColumn()) {
+            $actions[] = ['label' => 'Factures en retard de paiement', 'count' => $n, 'url' => url('/invoices'), 'icon' => 'bi-receipt'];
+        }
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM clients WHERE organization_id = ? AND deletion_requested_at IS NOT NULL');
+        $stmt->execute([$orgId]);
+        if ($n = (int) $stmt->fetchColumn()) {
+            $actions[] = ['label' => 'Demandes de suppression de données (RGPD) en attente', 'count' => $n, 'url' => url('/clients'), 'icon' => 'bi-shield-lock'];
+        }
+
+        $stmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM events e
+             WHERE e.organization_id = ? AND e.status = 'confirmed'
+               AND e.event_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY)
+               AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.event_id = e.id AND i.type = 'deposit' AND i.status IN ('paid', 'partially_paid'))"
+        );
+        $stmt->execute([$orgId]);
+        if ($n = (int) $stmt->fetchColumn()) {
+            $actions[] = ['label' => 'Événements proches sans acompte encaissé', 'count' => $n, 'url' => url('/events'), 'icon' => 'bi-calendar-x'];
+        }
+
+        return $actions;
     }
 }

@@ -9,6 +9,7 @@ use App\Core\View;
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php include __DIR__ . '/../partials/favicon.php'; ?>
 <title>EventPlanner — Gérez vos événements de A à Z</title>
 <meta name="description" content="EventPlanner centralise clients, devis, contrats, factures, invités et prestataires pour les organisateurs d'événements.">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">

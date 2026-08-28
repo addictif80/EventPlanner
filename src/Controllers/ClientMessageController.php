@@ -46,6 +46,7 @@ class ClientMessageController
         $body = trim(input('body', ''));
         if ($body !== '') {
             ClientMessage::send(Auth::organizationId(), (int) $clientId, 'staff', Auth::id(), $body);
+            \App\Models\Notification::toClient((int) $clientId, Auth::organizationId(), 'message', 'Nouveau message', $body);
         }
 
         redirect('/clients/' . $clientId . '#messages');
@@ -75,6 +76,16 @@ class ClientMessageController
         $body = trim(input('body', ''));
         if ($body !== '') {
             ClientMessage::send($portalClient['organization_id'], $portalClient['id'], 'client', null, $body);
+            $stmt = Database::connection()->prepare('SELECT * FROM clients WHERE id = ? AND organization_id = ? LIMIT 1');
+            $stmt->execute([$portalClient['id'], $portalClient['organization_id']]);
+            $client = $stmt->fetch();
+            \App\Models\Notification::toOrganization(
+                $portalClient['organization_id'],
+                'message',
+                'Nouveau message client',
+                ($client ? Client::displayName($client) : 'Un client') . ' : ' . $body,
+                '/clients/' . $portalClient['id'] . '#messages'
+            );
         }
 
         redirect('/portal/' . $token . '#messages');

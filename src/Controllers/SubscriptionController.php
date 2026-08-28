@@ -10,6 +10,8 @@ use App\Core\StripeBilling;
 use App\Core\View;
 use App\Models\Module;
 use App\Models\ModulePackage;
+use App\Models\Notification;
+use App\Models\Organization;
 use App\Models\OrganizationSubscription;
 use App\Models\OrganizationSubscriptionItem;
 use App\Models\Plan;
@@ -377,6 +379,8 @@ class SubscriptionController
             'cancel_at_period_end' => 0,
         ]);
 
+        self::clearPastDueAndReactivate($localSubId, $orgId);
+
         $moduleIds = array_filter(array_map('intval', explode(',', $meta['module_ids'] ?? '')));
         $packageIds = array_filter(array_map('intval', explode(',', $meta['package_ids'] ?? '')));
 
@@ -445,6 +449,32 @@ class SubscriptionController
 
         Database::connection()->prepare('UPDATE organization_subscriptions SET status = ?, current_period_end = ?, cancel_at_period_end = ? WHERE id = ?')
             ->execute([$status, $periodEnd, !empty($sub['cancel_at_period_end']) ? 1 : 0, $local['id']]);
+
+        if ($status === 'active') {
+            self::clearPastDueAndReactivate((int) $local['id'], (int) $local['organization_id']);
+        }
+    }
+
+    /**
+     * Payment recovered: clears the past_due clock, and if the organization
+     * had been auto-suspended for non-payment (see bin/suspend_unpaid_organizations.php),
+     * reactivates it. A manually-suspended organization (suspension_reason = 'manual')
+     * is left untouched — only the super admin lifts that one.
+     */
+    private static function clearPastDueAndReactivate(int $subscriptionId, int $organizationId): void
+    {
+        Database::connection()->prepare('UPDATE organization_subscriptions SET past_due_since = NULL WHERE id = ?')->execute([$subscriptionId]);
+
+        $organization = Organization::find($organizationId);
+        if ($organization && $organization['status'] === 'suspended' && $organization['suspension_reason'] === 'non_payment') {
+            Organization::update($organizationId, ['status' => 'active', 'suspension_reason' => null]);
+            Notification::toPlatform(
+                'system',
+                'Organisation réactivée',
+                $organization['name'] . ' a régularisé son paiement et a été réactivée automatiquement.',
+                '/admin/organizations/' . $organizationId
+            );
+        }
     }
 
     private static function handleSubscriptionDeleted(array $sub): void
@@ -468,6 +498,12 @@ class SubscriptionController
         $local = OrganizationSubscription::findByStripeSubscriptionId($subscriptionId);
         if ($local) {
             OrganizationSubscription::updateStatus((int) $local['id'], 'past_due');
+            // Only start the grace-period clock the first time it goes past_due —
+            // Stripe retries a failing invoice several times over ~3 weeks, and
+            // each retry re-fires this webhook; the clock must not keep resetting.
+            Database::connection()
+                ->prepare('UPDATE organization_subscriptions SET past_due_since = COALESCE(past_due_since, NOW()) WHERE id = ?')
+                ->execute([$local['id']]);
         }
     }
 

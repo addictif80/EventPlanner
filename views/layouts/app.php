@@ -10,12 +10,14 @@ $flashes = flashes();
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php include __DIR__ . '/../partials/favicon.php'; ?>
 <title><?= View::e($title ?? 'EventPlanner') ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="<?= url('/assets/css/style.css') ?>">
 </head>
 <body>
+<?php include __DIR__ . '/../partials/pwa_install_banner.php'; ?>
 <div class="d-flex">
   <nav class="sidebar bg-dark text-white p-3 vh-100" style="width:230px; position:sticky; top:0;">
     <a href="<?= url('/') ?>" class="d-flex align-items-center mb-4 text-white text-decoration-none">
@@ -71,6 +73,15 @@ $flashes = flashes();
       <h1 class="h5 mb-0"><?= View::e($title ?? '') ?></h1>
       <div class="d-flex align-items-center gap-3">
         <?php if ($user): ?>
+        <button id="search-trigger" type="button" class="btn btn-sm btn-outline-secondary" title="Recherche (Ctrl/Cmd+K)"><i class="bi bi-search"></i></button>
+        <?php
+        $notifFeedUrl = url('/notifications.json');
+        $notifMarkReadUrl = url('/notifications/__ID__/read');
+        $notifMarkAllUrl = url('/notifications/read-all');
+        $notifPushSubscribeUrl = url('/push/subscribe');
+        $notifVapidKeyUrl = url('/push/vapid-public-key.json');
+        include __DIR__ . '/../partials/notification_bell.php';
+        ?>
         <span class="text-muted small"><?= View::e($user['name']) ?> · <?= View::e($user['role']) ?></span>
         <a href="<?= url('/account') ?>" class="btn btn-sm btn-outline-secondary">Mon compte</a>
         <a href="<?= url('/logout') ?>" class="btn btn-sm btn-outline-secondary">Déconnexion</a>
@@ -88,6 +99,19 @@ $flashes = flashes();
     </div>
   </main>
 </div>
+
+<div id="search-modal" class="d-none" data-search-url="<?= url('/search.json') ?>" style="position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1080;">
+  <div class="mx-auto mt-5" style="max-width:560px;">
+    <div class="card shadow">
+      <div class="card-body p-0">
+        <input id="search-input" type="text" class="form-control form-control-lg border-0" placeholder="Rechercher un client, un événement, un devis, une facture...">
+        <div id="search-results" class="list-group list-group-flush" style="max-height:400px; overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= url('/assets/js/search.js') ?>"></script>
 </body>
 </html>

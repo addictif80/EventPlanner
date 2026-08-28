@@ -114,6 +114,8 @@ class RegisterController
             redirect('/register');
         }
 
+        \App\Models\Notification::toPlatform('system', 'Nouvelle organisation', $orgName . ' vient de s\'inscrire.', '/admin/organizations/' . $organizationId);
+
         Auth::login($userId, $organizationId);
         Session::flash('success', 'Bienvenue sur EventPlanner ! Pensez à configurer votre serveur SMTP dans Paramètres pour pouvoir envoyer des emails.');
         redirect('/');

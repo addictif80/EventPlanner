@@ -9,6 +9,7 @@ $flashes = flashes();
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php include __DIR__ . '/../partials/favicon.php'; ?>
 <title><?= View::e($title ?? 'Administration') ?> — EventPlanner</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -40,6 +41,14 @@ $flashes = flashes();
       <h1 class="h5 mb-0"><?= View::e($title ?? '') ?></h1>
       <div class="d-flex align-items-center gap-3">
         <?php if ($user): ?>
+        <?php
+        $notifFeedUrl = url('/admin/notifications.json');
+        $notifMarkReadUrl = url('/admin/notifications/__ID__/read');
+        $notifMarkAllUrl = url('/admin/notifications/read-all');
+        $notifPushSubscribeUrl = url('/admin/push/subscribe');
+        $notifVapidKeyUrl = url('/push/vapid-public-key.json');
+        include __DIR__ . '/../partials/notification_bell.php';
+        ?>
         <span class="text-muted small"><?= View::e($user['name']) ?> · super admin</span>
         <a href="<?= url('/logout') ?>" class="btn btn-sm btn-outline-secondary">Déconnexion</a>
         <?php endif; ?>

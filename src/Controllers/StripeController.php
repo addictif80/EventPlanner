@@ -200,6 +200,28 @@ class StripeController
                     // Recompute the invoice's paid status directly (bypassing the
                     // Auth-scoped Invoice::recalculatePaidStatus(), unavailable here).
                     self::recalculatePaidStatusFor((int) $id, $invoiceRow['organization_id']);
+
+                    $invStmt = Database::connection()->prepare('SELECT invoice_number, client_id FROM invoices WHERE id = ? AND organization_id = ?');
+                    $invStmt->execute([$id, $invoiceRow['organization_id']]);
+                    $invRow = $invStmt->fetch();
+                    if ($invRow) {
+                        \App\Models\Notification::toOrganization(
+                            (int) $invoiceRow['organization_id'],
+                            'payment',
+                            'Paiement reçu',
+                            'Facture ' . $invRow['invoice_number'] . ' payée en ligne (' . \App\Core\View::money(($session['amount_total'] ?? 0) / 100) . ').',
+                            '/invoices/' . $id
+                        );
+                        if (!empty($invRow['client_id'])) {
+                            \App\Models\Notification::toClient(
+                                (int) $invRow['client_id'],
+                                (int) $invoiceRow['organization_id'],
+                                'payment',
+                                'Paiement confirmé',
+                                'Votre paiement pour la facture ' . $invRow['invoice_number'] . ' a bien été reçu.'
+                            );
+                        }
+                    }
                 }
 
                 echo '<p>Paiement confirmé, merci ! Vous pouvez fermer cette page.</p>';

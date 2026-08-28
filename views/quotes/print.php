@@ -1,4 +1,4 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\Auth; use App\Core\View; $logoUrl = org_logo_url(Auth::organizationId(), $company); ?>
 <!doctype html>
 <html lang="fr">
 <head>
@@ -23,6 +23,7 @@
 
 <div class="header">
   <div class="company">
+    <?php if ($logoUrl): ?><img src="<?= View::e($logoUrl) ?>" alt="" style="max-height:60px; max-width:220px; margin-bottom:8px;"><?php endif; ?>
     <h2><?= View::e($company['company_name']) ?></h2>
     <p><?= View::e($company['address']) ?><br>
     <?= View::e($company['postal_code']) ?> <?= View::e($company['city']) ?><br>

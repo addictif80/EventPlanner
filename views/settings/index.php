@@ -1,4 +1,4 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\Auth; use App\Core\View; ?>
 <ul class="nav nav-tabs mb-3">
   <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-company">Entreprise</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-smtp">Email (SMTP)</a></li>
@@ -11,8 +11,30 @@
 <div class="tab-content">
   <div class="tab-pane fade show active" id="tab-company">
     <div class="card"><div class="card-body">
-      <form method="post" action="<?= url('/settings/company') ?>">
+      <form method="post" action="<?= url('/settings/company') ?>" enctype="multipart/form-data">
         <?= csrf_field() ?>
+        <div class="mb-3">
+          <label class="form-label">Logo de l'organisation</label>
+          <div class="d-flex align-items-center gap-3">
+            <?php if (!empty($company['logo_path'])): ?>
+              <img src="<?= url('/org-logo/' . Auth::organizationId()) ?>" alt="Logo" style="height:48px; max-width:160px; object-fit:contain;" class="border rounded p-1 bg-white">
+            <?php else: ?>
+              <span class="text-muted small">Aucun logo pour l'instant.</span>
+            <?php endif; ?>
+            <input type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="form-control form-control-sm" style="max-width:280px;">
+            <?php if (!empty($company['logo_path'])): ?>
+              <button type="submit" name="remove_logo" value="1" class="btn btn-sm btn-outline-danger">Supprimer</button>
+            <?php endif; ?>
+          </div>
+          <p class="form-text">Utilisé dans les emails envoyés à vos clients et sur vos devis/factures/contrats. PNG, JPG, WebP ou SVG, 2 Mo max.</p>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Couleur de marque</label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="color" name="brand_color" value="<?= View::e($company['brand_color'] ?? '#3b56d9') ?>" class="form-control form-control-color" title="Choisir une couleur">
+          </div>
+          <p class="form-text">Utilisée pour personnaliser le portail client et les emails à vos couleurs.</p>
+        </div>
         <div class="row g-3">
           <div class="col-md-6"><label class="form-label">Nom de l'entreprise</label><input type="text" name="company_name" class="form-control" value="<?= View::e($company['company_name'] ?? '') ?>"></div>
           <div class="col-md-6"><label class="form-label">Forme juridique</label><input type="text" name="legal_form" class="form-control" value="<?= View::e($company['legal_form'] ?? '') ?>"></div>

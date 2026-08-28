@@ -9,6 +9,7 @@ use App\Core\View;
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php include __DIR__ . '/../partials/favicon.php'; ?>
 <title><?= View::e($page['title']) ?> — EventPlanner</title>
 <?php if (!empty($page['meta_description'])): ?>
 <meta name="description" content="<?= View::e($page['meta_description']) ?>">

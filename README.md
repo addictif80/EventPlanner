@@ -173,6 +173,14 @@ qu'un site CyberPanel crée pour sa base de données).
 
 # Génération des prochaines échéances de factures récurrentes, tous les jours à 6h
 0 6 * * * php /chemin/vers/EventPlanner/bin/generate_recurring_invoices.php
+
+# Alertes métier proactives (devis sans réponse, facture bientôt échue,
+# acompte manquant, double réservation de lieu), tous les jours à 8h
+0 8 * * * php /chemin/vers/EventPlanner/bin/send_business_alerts.php
+
+# Suspension automatique des organisations impayées (désactivée par défaut,
+# à activer dans Super admin > Paramètres système > Facturation), tous les jours à 7h
+0 7 * * * php /chemin/vers/EventPlanner/bin/suspend_unpaid_organizations.php
 ```
 
 ## Fonctionnalités couvertes
@@ -267,7 +275,8 @@ de l'URL (ou les métadonnées de la session Stripe), jamais via
 `Auth::organizationId()`.
 
 Les scripts cron (`bin/send_overdue_reminders.php`,
-`bin/generate_recurring_invoices.php`) tournent hors contexte HTTP et
+`bin/generate_recurring_invoices.php`, `bin/send_business_alerts.php`)
+tournent hors contexte HTTP et
 parcourent toutes les organisations : chaque itération positionne
 manuellement le contexte d'organisation courant avant d'appeler les modèles
 scopés.

@@ -1,4 +1,4 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\Auth; use App\Core\View; $logoUrl = org_logo_url(Auth::organizationId(), $company); ?>
 <!doctype html>
 <html lang="fr">
 <head>
@@ -17,7 +17,7 @@
 <body>
 <button class="print-btn" onclick="window.print()">Imprimer / Enregistrer en PDF</button>
 <div class="header">
-  <div><h2><?= View::e($company['company_name']) ?></h2><p><?= View::e($company['address']) ?><br><?= View::e($company['postal_code']) ?> <?= View::e($company['city']) ?></p></div>
+  <div><?php if ($logoUrl): ?><img src="<?= View::e($logoUrl) ?>" alt="" style="max-height:60px; max-width:220px; display:block; margin-bottom:6px;"><?php endif; ?><h2><?= View::e($company['company_name']) ?></h2><p><?= View::e($company['address']) ?><br><?= View::e($company['postal_code']) ?> <?= View::e($company['city']) ?></p></div>
   <div><h3>Bon de commande <?= View::e($po['po_number']) ?></h3><p>Date : <?= View::date($po['issue_date']) ?><br>Fournisseur : <?= View::e($po['provider_name']) ?></p></div>
 </div>
 <table>

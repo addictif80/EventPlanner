@@ -41,12 +41,16 @@ class Mailer
         $recipients = is_array($to) ? $to : [$to];
         $senderName = $settings['from_name'] ?: $settings['from_email'];
 
+        $company = \App\Models\CompanySettings::get();
+        $logoUrl = org_logo_url(Auth::organizationId(), $company) ?: null;
+        $brandColor = $company['brand_color'] ?? null;
+
         $client->send(
             $settings['from_email'],
             $senderName,
             $recipients,
             $subject,
-            EmailDesign::wrap($htmlBody, $senderName),
+            EmailDesign::wrap($htmlBody, $senderName, $logoUrl, $brandColor),
             $textBody,
             $attachments
         );

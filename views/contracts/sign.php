@@ -1,15 +1,22 @@
-<?php use App\Core\View; ?>
+<?php
+use App\Core\View;
+$logoUrl = org_logo_url($contract['organization_id'] ?? null, $company ?? []);
+$brandColor = preg_match('/^#[0-9a-fA-F]{6}$/', $company['brand_color'] ?? '') ? $company['brand_color'] : '#3b56d9';
+?>
 <!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php include __DIR__ . '/../partials/favicon.php'; ?>
 <title>Signer le contrat</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>.btn-primary{ --bs-btn-bg: <?= $brandColor ?>; --bs-btn-border-color: <?= $brandColor ?>; --bs-btn-hover-bg: <?= shade_color($brandColor, -12) ?>; --bs-btn-hover-border-color: <?= shade_color($brandColor, -12) ?>; }</style>
 </head>
 <body class="bg-light">
 <div class="container py-5" style="max-width:700px;">
   <div class="card shadow-sm"><div class="card-body p-4">
+    <?php if ($logoUrl): ?><img src="<?= View::e($logoUrl) ?>" alt="" style="max-height:56px; max-width:200px; margin-bottom:12px;"><?php endif; ?>
     <h1 class="h4 mb-3"><?= View::e($contract['title']) ?></h1>
 
     <?php foreach ((flashes()['error'] ?? []) as $m): ?>

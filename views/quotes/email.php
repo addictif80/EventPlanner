@@ -1,4 +1,4 @@
-<?php use App\Core\View; ?>
+<?php use App\Core\View; $brandColor = preg_match('/^#[0-9a-fA-F]{6}$/', $company['brand_color'] ?? '') ? $company['brand_color'] : '#3b56d9'; ?>
 <p>Bonjour,</p>
 <p><?= nl2br(View::e($intro ?? 'Veuillez trouver ci-dessous le récapitulatif de votre devis.')) ?> (Devis <strong><?= View::e($quote['quote_number']) ?></strong>, valable jusqu'au <?= View::date($quote['valid_until']) ?>.)</p>
 <table style="width:100%; border-collapse: collapse; margin:20px 0;">
@@ -14,6 +14,6 @@
     <?php endforeach; ?>
   </tbody>
 </table>
-<p><strong>Total TTC : <?= View::money((float)$quote['total']) ?></strong></p>
+<p><strong style="color:<?= View::e($brandColor) ?>;">Total TTC : <?= View::money((float)$quote['total']) ?></strong></p>
 <?php if (!empty($quote['notes'])): ?><p><?= nl2br(View::e($quote['notes'])) ?></p><?php endif; ?>
 <p>Cordialement,<br><?= View::e($company['company_name']) ?></p>

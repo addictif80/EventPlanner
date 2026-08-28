@@ -66,12 +66,30 @@ class PortalController
         $stmt->execute([$client['id'], $orgId]);
         $invoices = $stmt->fetchAll();
 
+        // Contracts indexed by quote_id: lets the portal show, right next to
+        // each quote, whether its contract still needs signing — the single
+        // portal link doubling as the hub for accept devis -> sign contrat ->
+        // pay acompte, instead of three separate emailed links.
+        $stmt = $pdo->prepare('SELECT * FROM contracts WHERE client_id = ? AND organization_id = ? ORDER BY created_at DESC');
+        $stmt->execute([$client['id'], $orgId]);
+        $contractsByQuote = [];
+        foreach ($stmt->fetchAll() as $contract) {
+            if ($contract['quote_id'] !== null && !isset($contractsByQuote[$contract['quote_id']])) {
+                $contractsByQuote[$contract['quote_id']] = $contract;
+            }
+        }
+
+        $companyStmt = $pdo->prepare('SELECT * FROM company_settings WHERE organization_id = ?');
+        $companyStmt->execute([$orgId]);
+
         View::render('portal/show', [
             'client' => $client,
             'events' => $events,
             'quotes' => $quotes,
             'invoices' => $invoices,
+            'contractsByQuote' => $contractsByQuote,
             'token' => $token,
+            'company' => $companyStmt->fetch() ?: [],
             'stripeAvailable' => \App\Core\ModuleAccess::has('stripe_payments', $orgId),
         ], layout: null);
     }
@@ -104,6 +122,14 @@ class PortalController
         if ($quote && $quote['status'] === 'sent') {
             $pdo->prepare('UPDATE quotes SET status = ? WHERE id = ? AND organization_id = ?')
                 ->execute([$status, $quoteId, $client['organization_id']]);
+
+            \App\Models\Notification::toOrganization(
+                $client['organization_id'],
+                'quote',
+                $status === 'accepted' ? 'Devis accepté' : 'Devis refusé',
+                \App\Models\Client::displayName($client) . ' a ' . ($status === 'accepted' ? 'accepté' : 'refusé') . ' le devis.',
+                '/quotes/' . $quoteId
+            );
         }
 
         redirect('/portal/' . $token);
@@ -169,6 +195,15 @@ class PortalController
         Database::connection()
             ->prepare('UPDATE clients SET deletion_requested_at = NOW() WHERE id = ? AND organization_id = ?')
             ->execute([$client['id'], $client['organization_id']]);
+
+        \App\Models\Notification::toOrganization(
+            $client['organization_id'],
+            'rgpd',
+            'Demande de suppression de données',
+            \App\Models\Client::displayName($client) . ' a demandé la suppression de ses données.',
+            '/clients/' . $client['id'],
+            ['admin']
+        );
 
         View::render('portal/erasure_requested', [], layout: null);
     }

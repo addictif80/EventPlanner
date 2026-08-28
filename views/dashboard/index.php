@@ -1,4 +1,18 @@
 <?php use App\Core\View; ?>
+<?php if (!empty($requiredActions)): ?>
+<div class="card mb-4 border-warning">
+  <div class="card-header bg-warning-subtle"><i class="bi bi-exclamation-circle me-2"></i>Actions requises</div>
+  <div class="list-group list-group-flush">
+    <?php foreach ($requiredActions as $action): ?>
+      <a href="<?= $action['url'] ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        <span><i class="bi <?= $action['icon'] ?> me-2"></i><?= View::e($action['label']) ?></span>
+        <span class="badge bg-warning text-dark rounded-pill"><?= $action['count'] ?></span>
+      </a>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="row g-3 mb-4">
   <div class="col-md-3"><div class="card"><div class="card-body">
     <div class="text-muted small">Clients</div><div class="fs-3 fw-bold"><?= $stats['clients_count'] ?></div>
