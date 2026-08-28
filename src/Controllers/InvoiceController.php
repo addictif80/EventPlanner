@@ -183,6 +183,7 @@ class InvoiceController
 
         Invoice::replaceItems((int) $id, $items);
         Invoice::recalculatePaidStatus((int) $id);
+        ActivityLog::record('Modification facture', 'invoice', (int) $id);
         Session::flash('success', 'Facture mise à jour.');
         redirect('/invoices/' . $id);
     }
@@ -191,6 +192,7 @@ class InvoiceController
     {
         Csrf::verifyOrFail();
         Invoice::delete((int) $id);
+        ActivityLog::record('Suppression facture', 'invoice', (int) $id);
         Session::flash('success', 'Facture supprimée.');
         redirect('/invoices');
     }

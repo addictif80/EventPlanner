@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS users (
     role ENUM('admin', 'manager', 'staff') NOT NULL DEFAULT 'staff',
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     is_super_admin TINYINT(1) NOT NULL DEFAULT 0,
+    password_reset_token VARCHAR(64) DEFAULT NULL,
+    password_reset_expires_at DATETIME DEFAULT NULL,
+    invite_token VARCHAR(64) DEFAULT NULL,
+    invited_at DATETIME DEFAULT NULL,
+    invited_by INT UNSIGNED DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_users_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
@@ -417,6 +422,11 @@ CREATE TABLE IF NOT EXISTS activity_log (
     CONSTRAINT fk_log_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
     CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Append-only : aucune ligne du journal ne peut être modifiée après coup
+-- (voir migration 013 pour le détail du choix de ne pas bloquer DELETE).
+DROP TRIGGER IF EXISTS trg_activity_log_no_update;
+CREATE TRIGGER trg_activity_log_no_update BEFORE UPDATE ON activity_log FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'activity_log est en ajout seul (append-only) : modification interdite.';
 
 -- === Invités, tables/placement, billetterie ===
 

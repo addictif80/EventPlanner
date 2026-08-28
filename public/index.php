@@ -14,8 +14,8 @@ if ($remoteIp !== '' && BlockedIp::isBlocked($remoteIp)) {
 $router = require dirname(__DIR__) . '/src/routes.php';
 
 $path = $router->normalizedPath($_SERVER['REQUEST_URI'] ?? '/');
-$publicPaths = ['/', '/login', '/logout', '/register', '/push/vapid-public-key.json'];
-$publicPrefixes = ['/rsvp/', '/sign/', '/survey/', '/portal/', '/calendar/', '/stripe/return/', '/page/', '/org-logo/'];
+$publicPaths = ['/', '/login', '/logout', '/register', '/push/vapid-public-key.json', '/forgot-password'];
+$publicPrefixes = ['/rsvp/', '/sign/', '/survey/', '/portal/', '/calendar/', '/stripe/return/', '/page/', '/org-logo/', '/reset-password/', '/invite/'];
 $publicPaths[] = '/subscription/webhook';
 
 $isPublic = in_array($path, $publicPaths, true);

@@ -31,6 +31,61 @@ class AccountController
         ]);
     }
 
+    public static function updateProfile(): void
+    {
+        Auth::requireLogin();
+        Csrf::verifyOrFail();
+
+        $name = trim(input('name', ''));
+        $email = trim(input('email', ''));
+
+        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('error', 'Nom ou adresse email invalide.');
+            redirect('/account');
+        }
+
+        $stmt = Database::connection()->prepare('SELECT id FROM users WHERE email = ? AND id != ?');
+        $stmt->execute([$email, Auth::id()]);
+        if ($stmt->fetch()) {
+            Session::flash('error', 'Cette adresse email est déjà utilisée par un autre compte.');
+            redirect('/account');
+        }
+
+        Database::connection()->prepare('UPDATE users SET name = ?, email = ? WHERE id = ?')->execute([$name, $email, Auth::id()]);
+        unset($_SESSION['user_cache']);
+        \App\Core\ActivityLog::record('Modification profil', 'user', Auth::id(), 'Nom/email mis à jour');
+
+        Session::flash('success', 'Profil mis à jour.');
+        redirect('/account');
+    }
+
+    public static function updatePassword(): void
+    {
+        Auth::requireLogin();
+        Csrf::verifyOrFail();
+
+        $stmt = Database::connection()->prepare('SELECT password_hash FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([Auth::id()]);
+        $currentHash = $stmt->fetchColumn();
+
+        if (!$currentHash || !password_verify(input('current_password', ''), $currentHash)) {
+            Session::flash('error', 'Mot de passe actuel incorrect.');
+            redirect('/account');
+        }
+
+        $newPassword = input('new_password', '');
+        if (strlen($newPassword) < 8 || $newPassword !== input('new_password_confirmation', '')) {
+            Session::flash('error', 'Le nouveau mot de passe doit contenir au moins 8 caractères et être confirmé à l\'identique.');
+            redirect('/account');
+        }
+
+        Database::connection()->prepare('UPDATE users SET password_hash = ? WHERE id = ?')->execute([password_hash($newPassword, PASSWORD_DEFAULT), Auth::id()]);
+        \App\Core\ActivityLog::record('Changement mot de passe', 'user', Auth::id());
+
+        Session::flash('success', 'Mot de passe mis à jour.');
+        redirect('/account');
+    }
+
     public static function exportData(): void
     {
         Auth::requireLogin();

@@ -4,9 +4,41 @@
     <div class="card">
       <div class="card-header">Mes informations</div>
       <div class="card-body">
-        <p class="mb-1"><strong>Nom :</strong> <?= View::e($user['name']) ?></p>
-        <p class="mb-1"><strong>Email :</strong> <?= View::e($user['email']) ?></p>
-        <p class="mb-0"><strong>Rôle :</strong> <?= View::e($user['role']) ?></p>
+        <form method="post" action="<?= url('/account/profile') ?>">
+          <?= csrf_field() ?>
+          <div class="mb-3">
+            <label class="form-label">Nom</label>
+            <input type="text" name="name" class="form-control" value="<?= View::e($user['name']) ?>" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="<?= View::e($user['email']) ?>" required>
+          </div>
+          <p class="mb-3"><strong>Rôle :</strong> <?= View::e($user['role']) ?></p>
+          <button class="btn btn-primary btn-sm">Enregistrer</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header">Changer mon mot de passe</div>
+      <div class="card-body">
+        <form method="post" action="<?= url('/account/password') ?>">
+          <?= csrf_field() ?>
+          <div class="mb-3">
+            <label class="form-label">Mot de passe actuel</label>
+            <input type="password" name="current_password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nouveau mot de passe</label>
+            <input type="password" name="new_password" class="form-control" minlength="8" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirmer le nouveau mot de passe</label>
+            <input type="password" name="new_password_confirmation" class="form-control" minlength="8" required>
+          </div>
+          <button class="btn btn-primary btn-sm">Changer le mot de passe</button>
+        </form>
       </div>
     </div>
   </div>
