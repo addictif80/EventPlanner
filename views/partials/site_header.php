@@ -11,7 +11,7 @@ use App\Core\View;
     <div class="d-none d-md-flex align-items-center gap-3">
       <?php foreach (($headerItems ?? []) as $item): ?>
         <?php $href = str_starts_with($item['url'], '/') ? url($item['url']) : $item['url']; ?>
-        <a href="<?= View::e($href) ?>" class="text-decoration-none text-secondary"><?= View::e($item['label']) ?></a>
+        <a href="<?= View::e($href) ?>" class="text-decoration-none nav-link-custom"><?= View::e($item['label']) ?></a>
       <?php endforeach; ?>
     </div>
     <div class="d-flex align-items-center gap-2">
