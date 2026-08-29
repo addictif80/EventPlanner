@@ -15,7 +15,7 @@ $router = require dirname(__DIR__) . '/src/routes.php';
 
 $path = $router->normalizedPath($_SERVER['REQUEST_URI'] ?? '/');
 $publicPaths = ['/', '/login', '/logout', '/register', '/push/vapid-public-key.json', '/forgot-password'];
-$publicPrefixes = ['/rsvp/', '/sign/', '/survey/', '/portal/', '/calendar/', '/stripe/return/', '/page/', '/org-logo/', '/reset-password/', '/invite/', '/pos-receipt/'];
+$publicPrefixes = ['/rsvp/', '/sign/', '/survey/', '/portal/', '/calendar/', '/stripe/return/', '/page/', '/org-logo/', '/reset-password/', '/invite/', '/pos-receipt/', '/booking/'];
 $publicPaths[] = '/subscription/webhook';
 
 $isPublic = in_array($path, $publicPaths, true);

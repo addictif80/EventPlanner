@@ -5,6 +5,18 @@ $action = $quote ? url('/quotes/' . $quote['id']) : url('/quotes');
 $taxRate = $q['tax_rate'] ?? $company['default_tax_rate'] ?? 20;
 $rows = !empty($items) ? $items : [['description' => '', 'quantity' => 1, 'unit_price' => 0]];
 ?>
+<?php if (\App\Core\ModuleAccess::has('ai_assistant')): ?>
+<div class="card mb-3 border-primary-subtle"><div class="card-body">
+  <h3 class="h6"><i class="bi bi-stars me-1"></i>Générer les lignes avec l'IA</h3>
+  <p class="text-muted small mb-2">Décrivez le besoin du client en langage libre, l'IA propose des lignes de devis à ajuster.</p>
+  <div class="d-flex gap-2">
+    <textarea id="ai-brief" class="form-control" rows="2" placeholder="Ex : mariage 120 invités, traiteur, DJ, décoration florale, location de la salle jusqu'à 2h du matin..."></textarea>
+    <button type="button" id="ai-draft-btn" class="btn btn-outline-primary text-nowrap">Générer</button>
+  </div>
+  <div id="ai-draft-status" class="small text-muted mt-2"></div>
+</div></div>
+<?php endif; ?>
+
 <div class="card"><div class="card-body">
   <form method="post" action="<?= $action ?>" id="quote-form">
     <?= csrf_field() ?>
@@ -117,4 +129,51 @@ document.getElementById('items-table').addEventListener('click', (e) => {
 });
 
 recalc();
+
+const aiBtn = document.getElementById('ai-draft-btn');
+if (aiBtn) {
+  aiBtn.addEventListener('click', () => {
+    const brief = document.getElementById('ai-brief').value.trim();
+    const status = document.getElementById('ai-draft-status');
+    if (!brief) { status.textContent = 'Décrivez le besoin du client.'; return; }
+
+    aiBtn.disabled = true;
+    status.textContent = 'Génération en cours...';
+
+    const eventId = document.querySelector('select[name="event_id"]').value;
+    const csrfToken = document.querySelector('#quote-form input[name="csrf_token"]').value;
+
+    fetch(<?= json_encode(url('/quotes/ai-draft')) ?>, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+      body: 'csrf_token=' + encodeURIComponent(csrfToken) + '&brief=' + encodeURIComponent(brief) + '&event_id=' + encodeURIComponent(eventId),
+    }).then(r => r.json()).then(data => {
+      aiBtn.disabled = false;
+      if (data.error) { status.textContent = data.error; return; }
+
+      const tbody = document.querySelector('#items-table tbody');
+      tbody.innerHTML = '';
+      (data.items || []).forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'item-row';
+        tr.innerHTML = `
+          <td><input type="text" name="description[]" class="form-control" value="${item.description.replace(/"/g, '&quot;')}"></td>
+          <td><input type="text" name="quantity[]" class="form-control qty" value="${item.quantity}"></td>
+          <td><input type="text" name="unit_price[]" class="form-control price" value="${item.unit_price}"></td>
+          <td class="line-total pt-2">0,00 €</td>
+          <td><button type="button" class="btn btn-sm btn-link text-danger remove-row"><i class="bi bi-trash"></i></button></td>`;
+        tbody.appendChild(tr);
+      });
+
+      const notesField = document.querySelector('textarea[name="notes"]');
+      if (notesField && !notesField.value.trim() && data.notes) notesField.value = data.notes;
+
+      status.textContent = 'Lignes générées — relisez et ajustez avant d\'enregistrer.';
+      recalc();
+    }).catch(() => {
+      aiBtn.disabled = false;
+      status.textContent = "Échec de la génération.";
+    });
+  });
+}
 </script>

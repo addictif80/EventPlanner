@@ -50,6 +50,9 @@ use App\Controllers\OrgLogoController;
 use App\Controllers\SearchController;
 use App\Controllers\PosController;
 use App\Controllers\PosReceiptController;
+use App\Controllers\AiController;
+use App\Controllers\BookingSettingsController;
+use App\Controllers\PublicBookingController;
 
 $router = new Router();
 
@@ -227,6 +230,22 @@ $router->post('/pos/{id}/close', fn($p) => PosController::close($p['id']));
 $router->get('/pos-receipt/{token}', fn($p) => PosReceiptController::show($p['token']));
 $router->get('/pos-receipt/{token}/download', fn($p) => PosReceiptController::download($p['token']));
 
+// Assistant IA
+$router->post('/quotes/ai-draft', fn() => AiController::draftQuote());
+$router->post('/invoices/{id}/ai-reminder', fn($p) => AiController::draftReminder($p['id']));
+
+// Prise de rendez-vous en ligne
+$router->get('/booking-settings', fn() => BookingSettingsController::edit());
+$router->post('/booking-settings', fn() => BookingSettingsController::update());
+$router->get('/appointments', fn() => BookingSettingsController::index());
+$router->post('/appointments/{id}/cancel', fn($p) => BookingSettingsController::cancel($p['id']));
+
+// Page publique de réservation (prospect)
+$router->get('/booking/cancel/{token}', fn($p) => PublicBookingController::cancel($p['token']));
+$router->get('/booking/{slug}/slots.json', fn($p) => PublicBookingController::slotsJson($p['slug']));
+$router->get('/booking/{slug}', fn($p) => PublicBookingController::show($p['slug']));
+$router->post('/booking/{slug}', fn($p) => PublicBookingController::store($p['slug']));
+
 // Contracts + e-signature
 $router->get('/contracts', fn() => ContractController::index());
 $router->get('/contracts/create', fn() => ContractController::create());
@@ -366,6 +385,7 @@ $router->get('/admin/settings', fn() => AdminSettingsController::index());
 $router->post('/admin/settings/smtp', fn() => AdminSettingsController::updateSmtp());
 $router->post('/admin/settings/smtp/test', fn() => AdminSettingsController::testSmtp());
 $router->post('/admin/settings/billing', fn() => AdminSettingsController::updateBilling());
+$router->post('/admin/settings/ai', fn() => AdminSettingsController::updateAi());
 
 $router->get('/admin/pages', fn() => AdminSiteController::index());
 $router->get('/admin/pages/create', fn() => AdminSiteController::createPage());

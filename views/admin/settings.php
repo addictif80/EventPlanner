@@ -69,3 +69,18 @@
     </form>
   </div>
 </div>
+
+<div class="card mt-4">
+  <div class="card-body">
+    <h3 class="h6">Assistant IA (Claude)</h3>
+    <p class="text-muted small">Clé API Anthropic de la <strong>plateforme</strong>, utilisée pour le module « Assistant IA » (génération de lignes de devis, rédaction de relances) proposé aux organisations. Le coût des appels est à la charge de la plateforme.</p>
+    <form method="post" action="<?= url('/admin/settings/ai') ?>">
+      <?= csrf_field() ?>
+      <div class="mb-3" style="max-width:480px;">
+        <label class="form-label">Clé API Anthropic</label>
+        <input type="password" name="anthropic_api_key" class="form-control" placeholder="<?= !empty($settings['anthropic_api_key']) ? '•••••••• (laisser vide pour ne pas changer)' : 'sk-ant-...' ?>">
+      </div>
+      <button class="btn btn-primary">Enregistrer</button>
+    </form>
+  </div>
+</div>
