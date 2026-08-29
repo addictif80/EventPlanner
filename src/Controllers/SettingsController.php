@@ -175,7 +175,10 @@ class SettingsController
             Mailer::send(
                 $recipient,
                 'Test de configuration SMTP — EventPlanner',
-                '<p>Ceci est un email de test envoyé depuis votre panel EventPlanner.</p><p>Si vous recevez ce message, votre configuration SMTP fonctionne correctement.</p>'
+                '<p>Ceci est un email de test envoyé depuis votre panel EventPlanner.</p><p>Si vous recevez ce message, votre configuration SMTP fonctionne correctement.</p>',
+                null,
+                [],
+                false
             );
             Session::flash('success', 'Email de test envoyé avec succès à ' . $recipient . '.');
         } catch (\RuntimeException $e) {

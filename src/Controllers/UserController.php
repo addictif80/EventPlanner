@@ -103,7 +103,7 @@ class UserController
             . '<p><a href="' . View::e($link) . '">Accepter l\'invitation et choisir mon mot de passe</a></p>';
 
         try {
-            Mailer::send($email, 'Invitation à rejoindre EventPlanner', $html);
+            Mailer::send($email, 'Invitation à rejoindre EventPlanner', $html, null, [], false);
         } catch (\RuntimeException $e) {
             Session::flash('error', "L'invitation a été créée mais l'email n'a pas pu être envoyé : " . $e->getMessage());
         }

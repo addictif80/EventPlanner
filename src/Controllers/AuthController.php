@@ -93,7 +93,7 @@ class AuthController
                     . '<p>Ce lien expire dans 1 heure. Si vous n\'êtes pas à l\'origine de cette demande, ignorez cet email.</p>';
 
                 try {
-                    Mailer::send($email, 'Réinitialisation de votre mot de passe', $html);
+                    Mailer::send($email, 'Réinitialisation de votre mot de passe', $html, null, [], false);
                 } catch (\RuntimeException $e) {
                     // Best-effort: never reveal a delivery failure to the caller (same generic message either way).
                 }

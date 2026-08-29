@@ -32,14 +32,20 @@ class Mailer
      *
      * @param string|array $to
      * @param array<int,array{filename:string,mimeType:string,content:string}> $attachments
+     * @param bool $clientFacing Whether $to is a client/guest of the organization rather
+     *             than the organization's own staff (invitations, password resets, SMTP
+     *             test emails). Only client-facing sends on the system-SMTP fallback path
+     *             warn the organization's admins that their clients are receiving emails
+     *             from the platform's address instead of their own — see self::warnAdminsOfSmtpFallback().
      * @throws \RuntimeException if neither the organization's nor the platform's SMTP is configured
      */
-    public static function send($to, string $subject, string $htmlBody, ?string $textBody = null, array $attachments = []): void
+    public static function send($to, string $subject, string $htmlBody, ?string $textBody = null, array $attachments = [], bool $clientFacing = true): void
     {
         $settings = self::settings();
         $company = \App\Models\CompanySettings::get();
+        $usingFallback = empty($settings['host']) || empty($settings['from_email']);
 
-        if (!empty($settings['host']) && !empty($settings['from_email'])) {
+        if (!$usingFallback) {
             $transport = [
                 'host' => $settings['host'],
                 'port' => $settings['port'],
@@ -83,6 +89,58 @@ class Mailer
             $textBody,
             $attachments
         );
+
+        if ($usingFallback && $clientFacing) {
+            self::warnAdminsOfSmtpFallback((int) Auth::organizationId(), $company);
+        }
+    }
+
+    /**
+     * Warns an organization's admins, at most once a week, that their clients
+     * are currently receiving emails via EventPlanner's own SMTP server
+     * (because the organization hasn't configured its own) — in-app
+     * notification + email, with a link to the setup guide. Only called for
+     * client-facing sends (see self::send()); internal emails (invitations,
+     * password resets, SMTP test) never trigger it since the admin already
+     * knows in those cases.
+     */
+    private static function warnAdminsOfSmtpFallback(int $organizationId, array $company): void
+    {
+        $link = '/page/guide-configuration-smtp';
+
+        $stmt = Database::connection()->prepare(
+            "SELECT 1 FROM notifications
+             WHERE organization_id = ? AND type = 'smtp_fallback' AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+             LIMIT 1"
+        );
+        $stmt->execute([$organizationId]);
+        if ($stmt->fetchColumn()) {
+            return;
+        }
+
+        $title = "Vos emails clients partent sans votre propre adresse";
+        $message = "Votre organisation n'a pas encore de serveur d'envoi d'email configuré : les emails à vos clients (devis, factures, relances...) sont donc envoyés depuis l'adresse technique d'EventPlanner plutôt que depuis votre propre domaine. Configurez votre serveur SMTP pour que vos emails partent en votre nom.";
+
+        \App\Models\Notification::toOrganization($organizationId, 'smtp_fallback', $title, $message, $link, ['admin']);
+
+        try {
+            $stmt = Database::connection()->prepare("SELECT email FROM users WHERE organization_id = ? AND role = 'admin' AND is_active = 1");
+            $stmt->execute([$organizationId]);
+            $adminEmails = array_column($stmt->fetchAll(), 'email');
+            if (empty($adminEmails)) {
+                return;
+            }
+
+            $guideUrl = full_url($link);
+            $html = '<p>Bonjour,</p>'
+                . '<p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>'
+                . '<p style="margin:24px 0;"><a href="' . htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') . '" style="background-color:#14213d; color:#ffffff; padding:12px 22px; text-decoration:none; font-family:Helvetica,Arial,sans-serif; font-size:14px;">Configurer mon serveur d\'envoi d\'email</a></p>'
+                . '<p style="color:#8a909c; font-size:12px;">Vous recevez cet email au maximum une fois par semaine tant que ce point n\'est pas réglé.</p>';
+
+            self::sendSystem($adminEmails, "Configurez votre serveur d'envoi d'email", $html);
+        } catch (\Throwable $e) {
+            // Best-effort: never let the admin-warning email break the actual send that triggered it.
+        }
     }
 
     /**
