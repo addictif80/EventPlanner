@@ -110,13 +110,23 @@ $clientName = $event['company_name'] ?: trim($event['first_name'] . ' ' . $event
         <button class="btn btn-sm btn-primary">+</button>
       </form>
       <ul class="list-group list-group-flush">
+        <?php $epStatusColors = ['pending' => 'secondary', 'confirmed' => 'success', 'cancelled' => 'danger']; ?>
         <?php foreach ($eventProviders as $ep): ?>
         <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-          <span><?= View::e($ep['provider_name']) ?> <span class="text-muted small">(<?= View::e($ep['category']) ?>)</span><?php if ($ep['cost']): ?> — <?= View::money((float)$ep['cost']) ?><?php endif; ?></span>
+          <span>
+            <?= View::e($ep['provider_name']) ?> <span class="text-muted small">(<?= View::e($ep['category']) ?>)</span><?php if ($ep['cost']): ?> — <?= View::money((float)$ep['cost']) ?><?php endif; ?>
+            <?php if (!empty($ep['purchase_order_id'])): ?>
+              <a href="<?= url('/purchase-orders/' . $ep['purchase_order_id']) ?>" class="badge bg-<?= $epStatusColors[$ep['status']] ?? 'secondary' ?> text-decoration-none ms-1"><i class="bi bi-file-earmark-text"></i> <?= View::e($ep['po_number']) ?></a>
+            <?php endif; ?>
+          </span>
+          <?php if (empty($ep['purchase_order_id'])): ?>
           <form method="post" action="<?= url('/events/' . $event['id'] . '/providers/' . $ep['id'] . '/delete') ?>">
             <?= csrf_field() ?>
             <button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button>
           </form>
+          <?php else: ?>
+          <span class="text-muted small" title="Géré depuis le bon de commande"><i class="bi bi-link-45deg"></i></span>
+          <?php endif; ?>
         </li>
         <?php endforeach; ?>
         <?php if (empty($eventProviders)): ?><li class="list-group-item px-0 text-muted small">Aucun prestataire lié.</li><?php endif; ?>

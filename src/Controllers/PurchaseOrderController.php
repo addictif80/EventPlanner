@@ -55,6 +55,7 @@ class PurchaseOrderController
         ]);
 
         PurchaseOrder::replaceItems($id, $items);
+        PurchaseOrder::syncEventProvider($id);
         Session::flash('success', 'Bon de commande créé.');
         redirect('/purchase-orders/' . $id);
     }
@@ -79,6 +80,7 @@ class PurchaseOrderController
         $status = input('status');
         if (in_array($status, ['draft', 'sent', 'confirmed', 'cancelled'], true)) {
             PurchaseOrder::update((int) $id, ['status' => $status]);
+            PurchaseOrder::syncEventProvider((int) $id);
             Session::flash('success', 'Statut mis à jour.');
         }
         redirect('/purchase-orders/' . $id);
