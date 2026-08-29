@@ -58,6 +58,7 @@ class ProductController
             'unit_price' => (float) str_replace(',', '.', input('unit_price', '0')),
             'unit' => input('unit', 'unité'),
             'category' => input('category', ''),
+            'stock_quantity' => input('stock_quantity', '') !== '' ? (int) input('stock_quantity', '0') : null,
         ];
     }
 }

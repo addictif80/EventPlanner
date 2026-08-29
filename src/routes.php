@@ -48,6 +48,8 @@ use App\Controllers\ClientMessageController;
 use App\Controllers\NotificationController;
 use App\Controllers\OrgLogoController;
 use App\Controllers\SearchController;
+use App\Controllers\PosController;
+use App\Controllers\PosReceiptController;
 
 $router = new Router();
 
@@ -207,6 +209,23 @@ $router->post('/events/{id}/tickets/{ticketId}/cancel', fn($p) => TicketControll
 $router->get('/events/{id}/checkin', fn($p) => TicketController::checkinForm($p['id']));
 $router->post('/events/{id}/checkin', fn($p) => TicketController::checkinSubmit($p['id']));
 $router->get('/events/{id}/checkin/stats.json', fn($p) => TicketController::checkinStats($p['id']));
+
+// Caisse (point de vente)
+$router->get('/pos', fn() => PosController::index());
+$router->post('/pos/open', fn() => PosController::open());
+$router->get('/pos/sessions', fn() => PosController::sessions());
+$router->get('/pos/sessions/{id}', fn($p) => PosController::showSession($p['id']));
+$router->get('/pos/sales/{id}', fn($p) => PosController::saleShow($p['id']));
+$router->get('/pos/sales/{id}/pdf', fn($p) => PosController::salePdf($p['id']));
+$router->get('/pos/{id}', fn($p) => PosController::till($p['id']));
+$router->post('/pos/{id}/sell', fn($p) => PosController::sell($p['id']));
+$router->post('/pos/{id}/movement', fn($p) => PosController::movement($p['id']));
+$router->get('/pos/{id}/close', fn($p) => PosController::closeForm($p['id']));
+$router->post('/pos/{id}/close', fn($p) => PosController::close($p['id']));
+
+// Ticket de caisse — accès public en autonomie (email ou QR code)
+$router->get('/pos-receipt/{token}', fn($p) => PosReceiptController::show($p['token']));
+$router->get('/pos-receipt/{token}/download', fn($p) => PosReceiptController::download($p['token']));
 
 // Contracts + e-signature
 $router->get('/contracts', fn() => ContractController::index());
