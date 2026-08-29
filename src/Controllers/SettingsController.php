@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
@@ -41,6 +42,7 @@ class SettingsController
             }
         }
 
+        ActivityLog::record('Modification modèles emails', 'company_settings');
         Session::flash('success', 'Modèles d\'emails mis à jour.');
         redirect('/settings');
     }
@@ -52,6 +54,7 @@ class SettingsController
         Csrf::verifyOrFail();
 
         CompanySettings::update(['ics_feed_token' => bin2hex(random_bytes(24))]);
+        ActivityLog::record('Régénération lien calendrier', 'company_settings');
         Session::flash('success', 'Lien du flux calendrier généré.');
         redirect('/settings');
     }
@@ -109,6 +112,7 @@ class SettingsController
             'brand_color' => preg_match('/^#[0-9a-fA-F]{6}$/', input('brand_color', '')) ? input('brand_color') : '#3b56d9',
         ], $logoData));
 
+        ActivityLog::record('Modification entreprise', 'company_settings');
         Session::flash('success', 'Informations de l\'entreprise mises à jour.');
         redirect('/settings');
     }
@@ -152,6 +156,7 @@ class SettingsController
             ]);
         }
 
+        ActivityLog::record('Modification SMTP', 'smtp_settings');
         Session::flash('success', 'Configuration SMTP enregistrée.');
         redirect('/settings');
     }
@@ -170,7 +175,10 @@ class SettingsController
             Mailer::send(
                 $recipient,
                 'Test de configuration SMTP — EventPlanner',
-                '<p>Ceci est un email de test envoyé depuis votre panel EventPlanner.</p><p>Si vous recevez ce message, votre configuration SMTP fonctionne correctement.</p>'
+                '<p>Ceci est un email de test envoyé depuis votre panel EventPlanner.</p><p>Si vous recevez ce message, votre configuration SMTP fonctionne correctement.</p>',
+                null,
+                [],
+                false
             );
             Session::flash('success', 'Email de test envoyé avec succès à ' . $recipient . '.');
         } catch (\RuntimeException $e) {

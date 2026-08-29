@@ -1,6 +1,10 @@
 <?php use App\Core\View; ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
+<div class="d-flex justify-content-end mb-3">
+  <a href="<?= url('/reports/urssaf') ?>" class="btn btn-outline-dark btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Aide à la déclaration URSSAF</a>
+</div>
+
 <div class="row g-3 mb-4">
   <div class="col-md-3"><div class="card"><div class="card-body text-center">
     <div class="text-muted small">Taux de conversion des devis</div><div class="fs-3 fw-bold"><?= $conversionRate ?>%</div>

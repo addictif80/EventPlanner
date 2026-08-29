@@ -86,4 +86,92 @@ class ReportController
             'satisfactionAvg' => $satisfactionAvg ? round((float) $satisfactionAvg, 1) : null,
         ]);
     }
+
+    /**
+     * Aide à la déclaration URSSAF (micro-entreprise / auto-entrepreneur) :
+     * le chiffre d'affaires déclarable est celui réellement ENCAISSÉ sur la
+     * période (base de trésorerie), pas celui facturé — cette page calcule
+     * donc les mêmes montants que revenueByMonth ci-dessus (payments.payment_date),
+     * simplement présentés par mois et par trimestre pour une année choisie.
+     * Elle ne calcule volontairement aucun montant de cotisations : les taux
+     * évoluent chaque année et une valeur ici deviendrait vite fausse —
+     * seul le chiffre d'affaires encaissé (le montant réellement à déclarer)
+     * est fourni, avec un renvoi vers l'URSSAF pour le taux en vigueur.
+     */
+    public static function urssaf(): void
+    {
+        ModuleAccess::requireModule('reports');
+        $pdo = Database::connection();
+        $orgId = Auth::organizationId();
+
+        $availableYearsStmt = $pdo->prepare('SELECT DISTINCT YEAR(payment_date) AS y FROM payments WHERE organization_id = ? ORDER BY y DESC');
+        $availableYearsStmt->execute([$orgId]);
+        $availableYears = array_column($availableYearsStmt->fetchAll(), 'y');
+        if (empty($availableYears)) {
+            $availableYears = [(int) date('Y')];
+        }
+
+        $year = (int) ($_GET['year'] ?? date('Y'));
+        if (!in_array($year, $availableYears, true)) {
+            $year = $availableYears[0];
+        }
+
+        $stmt = $pdo->prepare(
+            "SELECT MONTH(payment_date) AS m, SUM(amount) AS total
+             FROM payments
+             WHERE YEAR(payment_date) = ? AND organization_id = ?
+             GROUP BY m"
+        );
+        $stmt->execute([$year, $orgId]);
+        $byMonth = array_fill(1, 12, 0.0);
+        foreach ($stmt->fetchAll() as $row) {
+            $byMonth[(int) $row['m']] = (float) $row['total'];
+        }
+
+        $byQuarter = [1 => 0.0, 2 => 0.0, 3 => 0.0, 4 => 0.0];
+        foreach ($byMonth as $month => $total) {
+            $byQuarter[(int) ceil($month / 3)] += $total;
+        }
+
+        View::render('reports/urssaf', [
+            'title' => 'Aide à la déclaration URSSAF',
+            'company' => \App\Models\CompanySettings::get(),
+            'year' => $year,
+            'availableYears' => $availableYears,
+            'byMonth' => $byMonth,
+            'byQuarter' => $byQuarter,
+            'yearTotal' => array_sum($byMonth),
+        ]);
+    }
+
+    public static function urssafExport(): void
+    {
+        ModuleAccess::requireModule('reports');
+        $pdo = Database::connection();
+        $orgId = Auth::organizationId();
+        $year = (int) ($_GET['year'] ?? date('Y'));
+
+        $stmt = $pdo->prepare(
+            "SELECT MONTH(payment_date) AS m, SUM(amount) AS total
+             FROM payments WHERE YEAR(payment_date) = ? AND organization_id = ? GROUP BY m"
+        );
+        $stmt->execute([$year, $orgId]);
+        $byMonth = array_fill(1, 12, 0.0);
+        foreach ($stmt->fetchAll() as $row) {
+            $byMonth[(int) $row['m']] = (float) $row['total'];
+        }
+
+        $monthNames = [1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril', 5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août', 9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'];
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="chiffre-affaires-encaisse-' . $year . '.csv"');
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, ['Mois', 'Trimestre', 'Chiffre d\'affaires encaissé'], ';');
+        foreach ($byMonth as $month => $total) {
+            fputcsv($out, [$monthNames[$month] . ' ' . $year, 'T' . (int) ceil($month / 3), number_format($total, 2, ',', '')], ';');
+        }
+        fputcsv($out, ['Total ' . $year, '', number_format(array_sum($byMonth), 2, ',', '')], ';');
+        fclose($out);
+    }
 }

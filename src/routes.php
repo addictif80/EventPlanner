@@ -57,6 +57,10 @@ $router->post('/login', fn() => AuthController::login());
 $router->get('/logout', fn() => AuthController::logout());
 $router->get('/register', fn() => RegisterController::show());
 $router->post('/register', fn() => RegisterController::register());
+$router->get('/forgot-password', fn() => AuthController::showForgotPassword());
+$router->post('/forgot-password', fn() => AuthController::sendResetLink());
+$router->get('/reset-password/{token}', fn($p) => AuthController::showResetPassword($p['token']));
+$router->post('/reset-password/{token}', fn($p) => AuthController::resetPassword($p['token']));
 
 // --- Everything below requires authentication ---
 // (enforced in public/index.php before dispatch, based on the request path,
@@ -157,6 +161,8 @@ $router->post('/settings/ics-token', fn() => SettingsController::generateIcsToke
 $router->post('/settings/organization/delete', fn() => SettingsController::destroyOrganization());
 
 $router->get('/account', fn() => AccountController::show());
+$router->post('/account/profile', fn() => AccountController::updateProfile());
+$router->post('/account/password', fn() => AccountController::updatePassword());
 $router->get('/account/export.json', fn() => AccountController::exportData());
 $router->post('/account/delete', fn() => AccountController::destroy());
 
@@ -176,6 +182,10 @@ $router->post('/users', fn() => UserController::store());
 $router->get('/users/{id}/edit', fn($p) => UserController::edit($p['id']));
 $router->post('/users/{id}', fn($p) => UserController::update($p['id']));
 $router->post('/users/{id}/delete', fn($p) => UserController::destroy($p['id']));
+$router->post('/users/{id}/suspend', fn($p) => UserController::toggleSuspend($p['id']));
+$router->post('/users/{id}/resend-invite', fn($p) => UserController::resendInvite($p['id']));
+$router->get('/invite/{token}', fn($p) => UserController::showAcceptInvite($p['token']));
+$router->post('/invite/{token}', fn($p) => UserController::acceptInvite($p['token']));
 
 // Guests, RSVP, seating
 $router->get('/events/{id}/guests', fn($p) => GuestController::index($p['id']));
@@ -259,6 +269,8 @@ $router->post('/clients/{id}/portal-link', fn($p) => PortalController::generateL
 
 // Reporting & exports
 $router->get('/reports', fn() => ReportController::index());
+$router->get('/reports/urssaf', fn() => ReportController::urssaf());
+$router->get('/reports/urssaf/export.csv', fn() => ReportController::urssafExport());
 $router->get('/export/invoices.csv', fn() => ExportController::invoicesCsv());
 $router->get('/export/clients.csv', fn() => ExportController::clientsCsv());
 

@@ -60,7 +60,7 @@
 
   <div class="tab-pane fade" id="tab-smtp">
     <div class="card"><div class="card-body">
-      <p class="text-muted">Configurez ici le serveur SMTP utilisé pour l'envoi des devis, factures et emails de test. Compatible avec n'importe quel fournisseur (OVH, Gmail, votre propre serveur mail sur la VM, etc.).</p>
+      <p class="text-muted">Configurez ici le serveur SMTP utilisé pour l'envoi des devis, factures et emails de test. Compatible avec n'importe quel fournisseur (OVH, Gmail, votre propre serveur mail sur la VM, etc.). Besoin d'aide ? Consultez le <a href="<?= url('/page/guide-configuration-smtp') ?>" target="_blank" rel="noopener">guide de configuration</a>.</p>
       <form method="post" action="<?= url('/settings/smtp') ?>">
         <?= csrf_field() ?>
         <div class="row g-3">

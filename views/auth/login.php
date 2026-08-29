@@ -26,7 +26,7 @@ $flashes = flashes();
           <input type="email" name="email" class="form-control" value="<?= View::e(old('email')) ?>" required autofocus>
         </div>
         <div class="mb-3">
-          <label class="form-label">Mot de passe</label>
+          <label class="form-label d-flex justify-content-between">Mot de passe <a href="<?= url('/forgot-password') ?>" class="small">Mot de passe oublié ?</a></label>
           <input type="password" name="password" class="form-control" required>
         </div>
         <button type="submit" class="btn btn-primary w-100">Se connecter</button>

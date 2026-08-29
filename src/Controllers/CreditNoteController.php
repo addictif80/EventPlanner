@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Csrf;
 use App\Core\Session;
 use App\Core\View;
@@ -30,6 +31,7 @@ class CreditNoteController
 
         // recalculatePaidStatus() aggregates payments + credit notes into amount_paid/status.
         Invoice::recalculatePaidStatus((int) $invoiceId);
+        ActivityLog::record('Création avoir', 'credit_note', $id, (string) $amount);
 
         Session::flash('success', 'Avoir généré.');
         redirect('/credit-notes/' . $id . '/print');
