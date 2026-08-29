@@ -25,16 +25,42 @@ class QuoteController
     public static function create(): void
     {
         $company = CompanySettings::get();
+        $selectedEventId = $_GET['event_id'] ?? null;
+
         View::render('quotes/form', [
             'title' => 'Nouveau devis',
             'quote' => null,
-            'items' => [],
+            'items' => self::itemsFromConfirmedPurchaseOrders($selectedEventId),
             'clients' => Client::all('created_at DESC'),
             'events' => Event::allWithClient(),
             'company' => $company,
             'selectedClientId' => $_GET['client_id'] ?? null,
-            'selectedEventId' => $_GET['event_id'] ?? null,
+            'selectedEventId' => $selectedEventId,
         ]);
+    }
+
+    /**
+     * Prefills a new quote's line items from the event's confirmed purchase
+     * orders, so a prestataire cost already confirmed for the event is
+     * imputed to the client's quote by default instead of being re-entered
+     * by hand (see PurchaseOrder::syncEventProvider(), which is what links a
+     * confirmed PO to the event in the first place).
+     */
+    private static function itemsFromConfirmedPurchaseOrders($eventId): array
+    {
+        if (empty($eventId)) {
+            return [];
+        }
+
+        $items = [];
+        foreach (\App\Models\PurchaseOrder::confirmedForEvent((int) $eventId) as $po) {
+            $items[] = [
+                'description' => 'Prestation ' . $po['provider_name'] . ' (BC ' . $po['po_number'] . ')',
+                'quantity' => 1,
+                'unit_price' => (float) $po['total'],
+            ];
+        }
+        return $items;
     }
 
     public static function store(): void

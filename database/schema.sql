@@ -280,12 +280,15 @@ CREATE TABLE IF NOT EXISTS event_providers (
     organization_id INT UNSIGNED NOT NULL,
     event_id INT UNSIGNED NOT NULL,
     provider_id INT UNSIGNED NOT NULL,
+    purchase_order_id INT UNSIGNED DEFAULT NULL,
     cost DECIMAL(12,2) DEFAULT NULL,
     status ENUM('pending', 'confirmed', 'cancelled') NOT NULL DEFAULT 'pending',
     notes TEXT,
     CONSTRAINT fk_ep_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
     CONSTRAINT fk_ep_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     CONSTRAINT fk_ep_provider FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE
+    -- fk_ep_po (purchase_order_id -> purchase_orders) added below, once that
+    -- table exists further down in this file; see uniq_ep_po as well.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS products (
@@ -570,6 +573,12 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
     CONSTRAINT fk_poi_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
     CONSTRAINT fk_poi_po FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- One event_providers row auto-reflects at most one purchase order (see
+-- migration 015 and PurchaseOrderController::syncEventProvider()).
+ALTER TABLE event_providers
+    ADD CONSTRAINT fk_ep_po FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE,
+    ADD UNIQUE KEY uniq_ep_po (purchase_order_id);
 
 CREATE TABLE IF NOT EXISTS equipment (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

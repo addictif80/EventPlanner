@@ -206,6 +206,7 @@ $router->post('/events/{id}/tickets/send', fn($p) => TicketController::sendBulk(
 $router->post('/events/{id}/tickets/{ticketId}/cancel', fn($p) => TicketController::cancel($p['id'], $p['ticketId']));
 $router->get('/events/{id}/checkin', fn($p) => TicketController::checkinForm($p['id']));
 $router->post('/events/{id}/checkin', fn($p) => TicketController::checkinSubmit($p['id']));
+$router->get('/events/{id}/checkin/stats.json', fn($p) => TicketController::checkinStats($p['id']));
 
 // Contracts + e-signature
 $router->get('/contracts', fn() => ContractController::index());

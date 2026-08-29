@@ -59,7 +59,13 @@ class EventController
         $stmt->execute([$id, $orgId]);
         $tasks = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare('SELECT ep.*, p.name AS provider_name, p.category FROM event_providers ep JOIN providers p ON p.id = ep.provider_id WHERE ep.event_id = ? AND ep.organization_id = ?');
+        $stmt = $pdo->prepare(
+            'SELECT ep.*, p.name AS provider_name, p.category, po.po_number
+             FROM event_providers ep
+             JOIN providers p ON p.id = ep.provider_id
+             LEFT JOIN purchase_orders po ON po.id = ep.purchase_order_id
+             WHERE ep.event_id = ? AND ep.organization_id = ?'
+        );
         $stmt->execute([$id, $orgId]);
         $eventProviders = $stmt->fetchAll();
 

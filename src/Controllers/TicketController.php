@@ -258,7 +258,51 @@ class TicketController
         View::render('tickets/checkin', [
             'title' => 'Check-in — ' . $event['title'],
             'event' => $event,
+            'stats' => self::stats((int) $eventId),
         ]);
+    }
+
+    private static function wantsJson(): bool
+    {
+        return ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest'
+            || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+    }
+
+    /** Counts + the most recently checked-in holders, for the live "mode jour J" counter. */
+    private static function stats(int $eventId): array
+    {
+        $pdo = Database::connection();
+        $orgId = Auth::organizationId();
+
+        $stmt = $pdo->prepare(
+            "SELECT COUNT(*) AS total, SUM(t.status = 'checked_in') AS checked_in
+             FROM tickets t JOIN ticket_categories tc ON tc.id = t.ticket_category_id
+             WHERE tc.event_id = ? AND t.organization_id = ? AND t.status != 'cancelled'"
+        );
+        $stmt->execute([$eventId, $orgId]);
+        $row = $stmt->fetch() ?: ['total' => 0, 'checked_in' => 0];
+
+        $stmt = $pdo->prepare(
+            "SELECT t.holder_name, t.code, t.checked_in_at, tc.name AS category_name
+             FROM tickets t JOIN ticket_categories tc ON tc.id = t.ticket_category_id
+             WHERE tc.event_id = ? AND t.organization_id = ? AND t.status = 'checked_in'
+             ORDER BY t.checked_in_at DESC LIMIT 10"
+        );
+        $stmt->execute([$eventId, $orgId]);
+
+        return [
+            'total' => (int) $row['total'],
+            'checked_in' => (int) $row['checked_in'],
+            'recent' => $stmt->fetchAll(),
+        ];
+    }
+
+    public static function checkinStats(string $eventId): void
+    {
+        ModuleAccess::requireModule('ticketing');
+        if (!Event::find((int) $eventId)) { http_response_code(404); echo json_encode(['error' => 'not_found']); return; }
+        header('Content-Type: application/json');
+        echo json_encode(self::stats((int) $eventId));
     }
 
     public static function checkinSubmit(string $eventId): void
@@ -279,7 +323,7 @@ class TicketController
             $message = 'Ce billet a été annulé.';
             $status = 'error';
         } elseif ($ticket['status'] === 'checked_in') {
-            $message = 'Ce billet a déjà été validé le ' . $ticket['checked_in_at'] . '.';
+            $message = 'Billet déjà validé le ' . $ticket['checked_in_at'] . '.';
             $status = 'warning';
         } else {
             Database::connection()->prepare('UPDATE tickets SET status = "checked_in", checked_in_at = NOW() WHERE id = ? AND organization_id = ?')
@@ -288,11 +332,21 @@ class TicketController
             $status = 'success';
         }
 
+        if (self::wantsJson()) {
+            header('Content-Type: application/json');
+            echo json_encode(array_merge(
+                ['message' => $message, 'status' => $status],
+                self::stats((int) $eventId)
+            ));
+            return;
+        }
+
         View::render('tickets/checkin', [
             'title' => 'Check-in — ' . $event['title'],
             'event' => $event,
             'message' => $message,
             'messageStatus' => $status,
+            'stats' => self::stats((int) $eventId),
         ]);
     }
 }
