@@ -1,10 +1,90 @@
 body { background: #f5f6fa; }
+
+/* --- App shell (sidebar + topbar), responsive --- */
+.app-shell { min-height: 100vh; }
+.sidebar {
+  width: 230px;
+  flex: none;
+}
 .sidebar .nav-link { border-radius: 6px; }
 .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,.15); }
+.min-w-0 { min-width: 0; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #14213d;
+  padding: .5rem .75rem;
+}
+.topbar-admin { background: #000; }
+.topbar-brand { font-weight: 600; font-size: 1.05rem; }
+.btn-icon {
+  border: none;
+  background: transparent;
+  padding: .25rem .5rem;
+  line-height: 1;
+}
+
+@media (min-width: 992px) {
+  .app-shell { position: sticky; top: 0; }
+  .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+}
+
+@media (max-width: 991.98px) {
+  .sidebar { width: 260px; }
+  .app-header { display: none !important; }
+}
+
 .card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 .table thead th { text-transform: uppercase; font-size: .75rem; color: #6c757d; border-top: none; }
 .badge-status { font-size: .75rem; }
+
+/* --- Mobile: touch targets, scrollable tables/toolbars, full-width stacked actions --- */
+@media (max-width: 767.98px) {
+  body { font-size: .95rem; }
+
+  .btn { min-height: 38px; }
+
+  /* Bare <table> elements not already wrapped in .table-responsive scroll
+     horizontally within their own box instead of blowing out the page. */
+  table.table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  table.table thead, table.table tbody, table.table tr { display: table; width: 100%; table-layout: auto; }
+
+  /* Header rows made of several inline buttons/links wrap and stack full-width
+     instead of overflowing off-screen (e.g. list page toolbars). */
+  .d-flex.justify-content-between.align-items-center.mb-3 {
+    flex-wrap: wrap;
+    row-gap: .5rem;
+  }
+  .d-flex.justify-content-between.align-items-center.mb-3 > div.d-flex {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .d-flex.justify-content-between.align-items-center.mb-3 > div.d-flex > .btn,
+  .d-flex.justify-content-between.align-items-center.mb-3 > div.d-flex > a.btn {
+    flex: 1 1 auto;
+  }
+
+  /* Grid columns using a bare col-N (no responsive prefix) still stack on
+     mobile so cramped multi-field forms (e.g. "quick add" rows) stay usable. */
+  .row.g-2 > [class*="col-"], .row.g-3 > [class*="col-"] {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  #search-modal .card { margin-top: 0; }
+}
+
 @media print {
-  .no-print { display: none !important; }
+  .no-print, .topbar, .sidebar, .app-header { display: none !important; }
   body { background: #fff; }
 }
