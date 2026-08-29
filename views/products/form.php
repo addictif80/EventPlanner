@@ -8,6 +8,11 @@
       <div class="col-md-3"><label class="form-label">Catégorie</label><input type="text" name="category" class="form-control" value="<?= View::e($p['category'] ?? '') ?>"></div>
       <div class="col-md-3"><label class="form-label">Unité</label><input type="text" name="unit" class="form-control" value="<?= View::e($p['unit'] ?? 'unité') ?>"></div>
       <div class="col-md-3"><label class="form-label">Prix unitaire HT</label><input type="text" name="unit_price" class="form-control" value="<?= View::e((string)($p['unit_price'] ?? '0')) ?>"></div>
+      <div class="col-md-3">
+        <label class="form-label">Stock suivi</label>
+        <input type="number" min="0" name="stock_quantity" class="form-control" value="<?= View::e((string)($p['stock_quantity'] ?? '')) ?>" placeholder="Illimité">
+        <div class="form-text">Laisser vide pour une prestation/service (stock non décompté en caisse).</div>
+      </div>
       <div class="col-12"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3"><?= View::e($p['description'] ?? '') ?></textarea></div>
     </div>
     <div class="mt-4 d-flex gap-2">
