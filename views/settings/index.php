@@ -13,6 +13,7 @@
     <div class="card"><div class="card-body">
       <form method="post" action="<?= url('/settings/company') ?>" enctype="multipart/form-data">
         <?= csrf_field() ?>
+        <input type="hidden" name="stripe_publishable_key" value="<?= View::e($company['stripe_publishable_key'] ?? '') ?>">
         <div class="mb-3">
           <label class="form-label">Logo de l'organisation</label>
           <div class="d-flex align-items-center gap-3">
@@ -123,18 +124,42 @@
       <p class="text-muted small">Renseignez vos propres clés API Stripe (Dashboard Stripe → Développeurs → Clés API) pour activer la génération de liens de paiement sur les factures.</p>
       <form method="post" action="<?= url('/settings/company') ?>">
         <?= csrf_field() ?>
-        <input type="hidden" name="company_name" value="<?= View::e($company['company_name'] ?? '') ?>">
-        <input type="hidden" name="default_tax_rate" value="<?= View::e((string)($company['default_tax_rate'] ?? 20)) ?>">
-        <input type="hidden" name="currency" value="<?= View::e($company['currency'] ?? 'EUR') ?>">
-        <input type="hidden" name="quote_prefix" value="<?= View::e($company['quote_prefix'] ?? 'DEV-') ?>">
-        <input type="hidden" name="invoice_prefix" value="<?= View::e($company['invoice_prefix'] ?? 'FAC-') ?>">
+        <?php
+        // updateCompany() saves the whole company_settings row every time, so
+        // every field not shown on this tab must round-trip as a hidden input
+        // — otherwise submitting from here would blank out the "Entreprise" tab.
+        foreach (['company_name', 'legal_form', 'address', 'postal_code', 'city', 'country', 'phone', 'email', 'website', 'siret', 'vat_number', 'default_tax_rate', 'currency', 'quote_prefix', 'invoice_prefix', 'invoice_footer', 'brand_color'] as $field):
+        ?>
+          <input type="hidden" name="<?= $field ?>" value="<?= View::e((string)($company[$field] ?? '')) ?>">
+        <?php endforeach; ?>
         <div class="row g-3">
-          <div class="col-md-6"><label class="form-label">Clé secrète Stripe</label><input type="password" name="stripe_secret_key" class="form-control" value="<?= View::e($company['stripe_secret_key'] ?? '') ?>" placeholder="sk_live_..."></div>
+          <div class="col-md-6"><label class="form-label">Clé secrète Stripe</label><input type="password" name="stripe_secret_key" class="form-control" placeholder="<?= !empty($company['stripe_secret_key']) ? '•••••••• (laisser vide pour ne pas changer)' : 'sk_live_...' ?>"></div>
           <div class="col-md-6"><label class="form-label">Clé publiable Stripe</label><input type="text" name="stripe_publishable_key" class="form-control" value="<?= View::e($company['stripe_publishable_key'] ?? '') ?>" placeholder="pk_live_..."></div>
         </div>
         <button class="btn btn-primary mt-3">Enregistrer</button>
       </form>
     </div></div>
+
+    <?php if (\App\Core\ModuleAccess::has('ai_assistant')): ?>
+    <div class="card mb-3"><div class="card-body">
+      <h3 class="h6">Assistant IA (Claude)</h3>
+      <p class="text-muted small">
+        L'assistant IA (génération de lignes de devis, rédaction de relances) est payant à l'usage auprès d'Anthropic.
+        Renseignez ici votre propre clé API (<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>) pour l'activer pour votre organisation — c'est alors votre compte Anthropic qui est facturé, pas EventPlanner.
+      </p>
+      <form method="post" action="<?= url('/settings/company') ?>">
+        <?= csrf_field() ?>
+        <?php foreach (['company_name', 'legal_form', 'address', 'postal_code', 'city', 'country', 'phone', 'email', 'website', 'siret', 'vat_number', 'default_tax_rate', 'currency', 'quote_prefix', 'invoice_prefix', 'invoice_footer', 'brand_color', 'stripe_publishable_key'] as $field): ?>
+          <input type="hidden" name="<?= $field ?>" value="<?= View::e((string)($company[$field] ?? '')) ?>">
+        <?php endforeach; ?>
+        <div class="mb-3" style="max-width:420px;">
+          <label class="form-label">Clé API Anthropic</label>
+          <input type="password" name="anthropic_api_key" class="form-control" placeholder="<?= !empty($company['anthropic_api_key']) ? '•••••••• (laisser vide pour ne pas changer)' : 'sk-ant-...' ?>">
+        </div>
+        <button class="btn btn-primary">Enregistrer</button>
+      </form>
+    </div></div>
+    <?php endif; ?>
 
     <div class="card"><div class="card-body">
       <h3 class="h6">Flux calendrier (Google Calendar / Outlook)</h3>

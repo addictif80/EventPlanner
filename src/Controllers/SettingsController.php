@@ -92,6 +92,17 @@ class SettingsController
             }
         }
 
+        // Secret-style credentials (Stripe, Claude/Anthropic) are only saved when
+        // re-entered: an empty field means "keep the previously stored value",
+        // never "erase it" — the same convention as the SMTP password field.
+        $secrets = [];
+        foreach (['stripe_secret_key' => 'stripe_secret_key', 'anthropic_api_key' => 'anthropic_api_key'] as $field => $column) {
+            $value = input($field, '');
+            if ($value !== '') {
+                $secrets[$column] = $value;
+            }
+        }
+
         CompanySettings::update(array_merge([
             'company_name' => input('company_name', ''),
             'legal_form' => input('legal_form', ''),
@@ -110,7 +121,8 @@ class SettingsController
             'invoice_prefix' => input('invoice_prefix', 'FAC-'),
             'invoice_footer' => input('invoice_footer', ''),
             'brand_color' => preg_match('/^#[0-9a-fA-F]{6}$/', input('brand_color', '')) ? input('brand_color') : '#3b56d9',
-        ], $logoData));
+            'stripe_publishable_key' => input('stripe_publishable_key', ''),
+        ], $secrets, $logoData));
 
         ActivityLog::record('Modification entreprise', 'company_settings');
         Session::flash('success', 'Informations de l\'entreprise mises à jour.');

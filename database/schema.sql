@@ -165,6 +165,7 @@ CREATE TABLE IF NOT EXISTS company_settings (
     invoice_footer TEXT,
     stripe_secret_key VARCHAR(255) DEFAULT '',
     stripe_publishable_key VARCHAR(255) DEFAULT '',
+    anthropic_api_key VARCHAR(255) DEFAULT '',
     ics_feed_token VARCHAR(64) DEFAULT NULL,
     CONSTRAINT fk_company_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

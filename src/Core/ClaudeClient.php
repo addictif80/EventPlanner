@@ -2,15 +2,17 @@
 
 namespace App\Core;
 
+use App\Models\CompanySettings;
 use App\Models\SystemSetting;
 
 /**
  * Minimal, dependency-free client for the Claude API (raw cURL — this
  * codebase has no Composer/vendor dir, so the official Anthropic SDK isn't
- * an option here). Uses the platform's own API key (Administration >
- * Paramètres système > Assistant IA), shared across every organization —
- * like the platform's system SMTP or Stripe keys — rather than asking each
- * tenant to bring their own.
+ * an option here). Each organization can bring its own Anthropic API key
+ * (Paramètres > Intégrations), billed on its own Anthropic account; if it
+ * hasn't set one, falls back to the platform's own key (Administration >
+ * Paramètres système), when the platform has chosen to fund usage itself —
+ * the same own-first/system-fallback pattern as Mailer::send()'s SMTP.
  */
 class ClaudeClient
 {
@@ -20,7 +22,16 @@ class ClaudeClient
 
     public static function isConfigured(): bool
     {
-        return !empty(SystemSetting::get()['anthropic_api_key'] ?? '');
+        return self::apiKey() !== '';
+    }
+
+    private static function apiKey(): string
+    {
+        $orgKey = CompanySettings::get()['anthropic_api_key'] ?? '';
+        if ($orgKey !== '') {
+            return $orgKey;
+        }
+        return SystemSetting::get()['anthropic_api_key'] ?? '';
     }
 
     /**
@@ -82,9 +93,9 @@ class ClaudeClient
 
     private static function request(array $payload): array
     {
-        $apiKey = SystemSetting::get()['anthropic_api_key'] ?? '';
-        if (empty($apiKey)) {
-            throw new \RuntimeException("L'assistant IA n'est pas configuré. Rendez-vous dans Administration > Paramètres système.");
+        $apiKey = self::apiKey();
+        if ($apiKey === '') {
+            throw new \RuntimeException("L'assistant IA n'est pas configuré. Renseignez une clé API Anthropic dans Paramètres > Intégrations.");
         }
 
         $ch = curl_init(self::API_URL);

@@ -73,7 +73,7 @@
 <div class="card mt-4">
   <div class="card-body">
     <h3 class="h6">Assistant IA (Claude)</h3>
-    <p class="text-muted small">Clé API Anthropic de la <strong>plateforme</strong>, utilisée pour le module « Assistant IA » (génération de lignes de devis, rédaction de relances) proposé aux organisations. Le coût des appels est à la charge de la plateforme.</p>
+    <p class="text-muted small">Optionnel. Chaque organisation peut renseigner sa propre clé API Anthropic dans ses Paramètres &gt; Intégrations (facturée sur son propre compte). Cette clé plateforme n'est qu'un repli utilisé pour les organisations qui n'ont pas renseigné la leur — ne la renseignez que si vous souhaitez prendre en charge ce coût vous-même ; laissez-la vide sinon, l'assistant restera simplement inactif pour ces organisations.</p>
     <form method="post" action="<?= url('/admin/settings/ai') ?>">
       <?= csrf_field() ?>
       <div class="mb-3" style="max-width:480px;">
