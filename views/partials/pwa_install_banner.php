@@ -5,4 +5,8 @@
     <button id="pwa-dismiss-btn" type="button" class="btn btn-sm btn-outline-secondary">Plus tard</button>
   </div>
 </div>
+<div id="pwa-ios-banner" class="d-none alert alert-primary d-flex justify-content-between align-items-center mb-0 rounded-0 py-2 px-3">
+  <span class="small"><i class="bi bi-phone me-2"></i>Installez EventPlanner : appuyez sur <i class="bi bi-box-arrow-up"></i> puis « Sur l'écran d'accueil ».</span>
+  <button id="pwa-ios-dismiss-btn" type="button" class="btn btn-sm btn-outline-secondary">Plus tard</button>
+</div>
 <script src="<?= url('/assets/js/pwa.js') ?>"></script>

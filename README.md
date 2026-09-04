@@ -181,6 +181,11 @@ qu'un site CyberPanel crée pour sa base de données).
 # Suspension automatique des organisations impayées (désactivée par défaut,
 # à activer dans Super admin > Paramètres système > Facturation), tous les jours à 7h
 0 7 * * * php /chemin/vers/EventPlanner/bin/suspend_unpaid_organizations.php
+
+# Régénère le compte de démonstration public (organisation "is_demo",
+# identifiants publiés sur la page de connexion) avec des données fraîches,
+# chaque nuit à 3h — annule toutes les modifications faites par les visiteurs
+0 3 * * * php /chemin/vers/EventPlanner/bin/seed_demo_data.php
 ```
 
 ## Fonctionnalités couvertes

@@ -1,12 +1,13 @@
 {
+    "id": "/",
     "name": "EventPlanner",
     "short_name": "EventPlanner",
     "description": "Gestion de clients, événements, devis, factures et invités pour organisateurs d'événements.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#f8f9fa",
-    "theme_color": "#3b56d9",
+    "background_color": "#14213d",
+    "theme_color": "#14213d",
     "lang": "fr",
     "icons": [
         {

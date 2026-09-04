@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     name VARCHAR(190) NOT NULL,
     status ENUM('active', 'suspended') NOT NULL DEFAULT 'active',
     suspension_reason VARCHAR(20) DEFAULT NULL,
+    is_demo TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

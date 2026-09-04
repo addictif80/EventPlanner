@@ -103,6 +103,11 @@ $flashes = flashes();
       </form>
     </div>
     <?php endif; ?>
+    <?php if (\App\Core\Demo::isActive()): ?>
+    <div class="alert alert-warning rounded-0 mb-0 text-center py-2 small">
+      <i class="bi bi-eye me-1"></i><strong>Mode démo</strong> — ces données sont partagées entre visiteurs et réinitialisées chaque nuit. Aucun email n'est réellement envoyé. <a href="<?= url('/register') ?>" class="alert-link">Créer mon propre compte</a>
+    </div>
+    <?php endif; ?>
     <header class="app-header d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom px-3 px-lg-4 py-2 bg-white">
       <h1 class="h5 mb-0 text-truncate"><?= View::e($title ?? '') ?></h1>
       <div class="d-flex align-items-center gap-2 gap-lg-3">
@@ -136,6 +141,9 @@ $flashes = flashes();
       <?php endforeach; ?>
       <?php foreach (($flashes['error'] ?? []) as $m): ?>
         <div class="alert alert-danger"><?= View::e($m) ?></div>
+      <?php endforeach; ?>
+      <?php foreach (($flashes['info'] ?? []) as $m): ?>
+        <div class="alert alert-info"><i class="bi bi-info-circle me-1"></i><?= View::e($m) ?></div>
       <?php endforeach; ?>
       <?= $content ?>
     </div>

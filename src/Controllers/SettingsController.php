@@ -6,6 +6,7 @@ use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Demo;
 use App\Core\Mailer;
 use App\Core\ModuleAccess;
 use App\Core\Session;
@@ -211,6 +212,11 @@ class SettingsController
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
+
+        if (Demo::isActive()) {
+            Session::flash('error', "La suppression de l'organisation est désactivée en mode démo.");
+            redirect('/settings');
+        }
 
         $stmt = Database::connection()->prepare('SELECT password_hash FROM users WHERE id = ? LIMIT 1');
         $stmt->execute([Auth::id()]);

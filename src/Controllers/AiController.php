@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\ClaudeClient;
 use App\Core\Csrf;
+use App\Core\Demo;
 use App\Core\ModuleAccess;
 use App\Models\CompanySettings;
 use App\Models\Event;
@@ -44,6 +45,10 @@ class AiController
         ModuleAccess::requireModule('ai_assistant');
         Csrf::verifyOrFail();
 
+        if (Demo::isActive()) {
+            self::json(['error' => "L'assistant IA est désactivé en mode démo."], 403);
+        }
+
         $brief = trim(input('brief', ''));
         if ($brief === '') {
             self::json(['error' => 'Merci de décrire le besoin du client.'], 422);
@@ -81,6 +86,10 @@ class AiController
     {
         ModuleAccess::requireModule('ai_assistant');
         Csrf::verifyOrFail();
+
+        if (Demo::isActive()) {
+            self::json(['error' => "L'assistant IA est désactivé en mode démo."], 403);
+        }
 
         $invoice = Invoice::findWithRelations((int) $invoiceId);
         if (!$invoice) {

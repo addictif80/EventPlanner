@@ -41,6 +41,11 @@ class Mailer
      */
     public static function send($to, string $subject, string $htmlBody, ?string $textBody = null, array $attachments = [], bool $clientFacing = true): void
     {
+        if (Demo::isActive()) {
+            Session::flash('info', "Mode démo : aucun email n'est réellement envoyé (le reste de l'action s'exécute normalement).");
+            return;
+        }
+
         $settings = self::settings();
         $company = \App\Models\CompanySettings::get();
         $usingFallback = empty($settings['host']) || empty($settings['from_email']);
@@ -153,6 +158,11 @@ class Mailer
      */
     public static function sendSystem($to, string $subject, string $htmlBody, ?string $textBody = null): void
     {
+        if (Demo::isActive()) {
+            Session::flash('info', "Mode démo : aucun email n'est réellement envoyé (le reste de l'action s'exécute normalement).");
+            return;
+        }
+
         $settings = \App\Models\SystemSetting::get();
 
         if (empty($settings['smtp_is_configured']) || empty($settings['smtp_host']) || empty($settings['smtp_from_email'])) {

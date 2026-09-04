@@ -43,7 +43,7 @@ class StripeController
         $stmt->execute([$invoiceId, $portalToken['client_id'], $orgId]);
         $invoice = $stmt->fetch();
 
-        if (!$invoice || !\App\Core\ModuleAccess::has('stripe_payments', $orgId)) {
+        if (!$invoice || !\App\Core\ModuleAccess::has('stripe_payments', $orgId) || \App\Core\Demo::isOrganization((int) $orgId)) {
             http_response_code(404);
             die('Facture introuvable ou paiement en ligne non disponible.');
         }
@@ -97,6 +97,11 @@ class StripeController
     {
         ModuleAccess::requireModule('stripe_payments');
         Csrf::verifyOrFail();
+
+        if (\App\Core\Demo::isActive()) {
+            Session::flash('error', 'Le paiement en ligne est désactivé en mode démo.');
+            redirect('/invoices/' . $id);
+        }
 
         $invoice = Invoice::find((int) $id);
         $company = CompanySettings::get();
