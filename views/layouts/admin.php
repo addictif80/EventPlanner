@@ -85,6 +85,9 @@ $flashes = flashes();
       <?php foreach (($flashes['error'] ?? []) as $m): ?>
         <div class="alert alert-danger"><?= View::e($m) ?></div>
       <?php endforeach; ?>
+      <?php foreach (($flashes['info'] ?? []) as $m): ?>
+        <div class="alert alert-info"><i class="bi bi-info-circle me-1"></i><?= View::e($m) ?></div>
+      <?php endforeach; ?>
       <?= $content ?>
     </div>
   </main>

@@ -32,6 +32,10 @@ $flashes = flashes();
         <button type="submit" class="btn btn-primary w-100">Se connecter</button>
       </form>
       <p class="text-center small text-muted mt-3 mb-0">Pas encore de compte ? <a href="<?= url('/register') ?>">Créer mon espace organisateur</a></p>
+      <hr>
+      <p class="text-center small text-muted mb-2">Envie de tester avant de vous inscrire ?</p>
+      <a href="<?= url('/demo') ?>" class="btn btn-outline-dark w-100 btn-sm"><i class="bi bi-eye me-1"></i>Essayer la démo</a>
+      <p class="text-center text-muted mt-2 mb-0" style="font-size:0.75rem;">Identifiants : <code><?= View::e(\App\Core\Demo::EMAIL) ?></code> / <code><?= View::e(\App\Core\Demo::PASSWORD) ?></code></p>
     </div>
   </div>
 </div>

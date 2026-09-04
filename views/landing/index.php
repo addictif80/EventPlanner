@@ -29,45 +29,103 @@ use App\Core\View;
         <p class="lead text-secondary mb-4">Clients, devis, contrats, factures, invités et prestataires dans un seul espace. Vos clients suivent tout depuis un portail à votre logo et vos couleurs, sans jamais voir la marque EventPlanner.</p>
         <div class="d-flex flex-wrap gap-3 mb-4">
           <a href="<?= url('/register') ?>" class="btn btn-primary btn-lg px-4">Essayer gratuitement</a>
-          <a href="#differenciants" class="btn btn-outline-secondary btn-lg px-4">Voir ce qui change</a>
+          <a href="<?= url('/demo') ?>" class="btn btn-outline-secondary btn-lg px-4"><i class="bi bi-eye me-1"></i>Essayer la démo</a>
         </div>
         <p class="small text-secondary mb-0"><i class="bi bi-check-circle-fill text-success me-1"></i>Sans engagement &nbsp;·&nbsp; <i class="bi bi-check-circle-fill text-success me-1"></i>Offre gratuite disponible &nbsp;·&nbsp; <i class="bi bi-check-circle-fill text-success me-1"></i>Hébergé en France</p>
       </div>
       <div class="col-lg-6">
         <div class="hero-mock p-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="fw-semibold"><i class="bi bi-speedometer2 me-2" style="color:var(--ep-primary);"></i>Tableau de bord</span>
+            <span class="fw-semibold" id="mock-title"><i class="bi bi-speedometer2 me-2" style="color:var(--ep-primary);"></i>Tableau de bord</span>
             <span class="badge text-bg-light border">Aperçu</span>
           </div>
-          <div class="alert py-2 px-3 mb-3 d-flex align-items-center gap-2" style="background:#fff7e6; border:1px solid #ffe9b8; color:#7a5600;">
-            <i class="bi bi-exclamation-circle"></i>
-            <span class="small fw-semibold mb-0">Actions requises : 2 devis à relancer, 1 facture en retard</span>
+
+          <div class="mock-tabs d-flex flex-wrap gap-2 mb-3">
+            <button type="button" class="mock-tab active" data-mock="portail" data-title="Portail client à votre marque"><i class="bi bi-palette2 me-1"></i>Portail client</button>
+            <button type="button" class="mock-tab" data-mock="caisse" data-title="Caisse sur place & ticket autonome"><i class="bi bi-cash-coin me-1"></i>Caisse</button>
+            <button type="button" class="mock-tab" data-mock="ia" data-title="Devis généré par l'IA"><i class="bi bi-stars me-1"></i>Assistant IA</button>
+            <button type="button" class="mock-tab" data-mock="alertes" data-title="Alertes proactives"><i class="bi bi-bell me-1"></i>Alertes</button>
+            <button type="button" class="mock-tab" data-mock="rdv" data-title="Prise de rendez-vous en ligne"><i class="bi bi-calendar2-check me-1"></i>Rendez-vous</button>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-6">
-              <div class="border rounded p-3">
-                <div class="text-secondary small">Événements à venir</div>
-                <div class="fs-4 fw-bold">12</div>
+
+          <div class="mock-panel" data-mock-panel="portail">
+            <div class="portal-preview-header d-flex align-items-center gap-2 mb-3 p-2 rounded">
+              <div class="portal-logo">VA</div>
+              <div>
+                <div class="fw-semibold small">Votre Agence Événements</div>
+                <div class="text-secondary" style="font-size:.72rem;">Portail de Camille &amp; Antoine</div>
               </div>
             </div>
-            <div class="col-6">
-              <div class="border rounded p-3">
-                <div class="text-secondary small">Devis en attente</div>
-                <div class="fs-4 fw-bold">5</div>
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2 small">
+              <span><i class="bi bi-check-circle-fill text-success me-2"></i>Devis accepté</span><span class="text-secondary">2 400 €</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2 small">
+              <span><i class="bi bi-check-circle-fill text-success me-2"></i>Contrat signé électroniquement</span><span class="text-secondary">✓</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2 small">
+              <span><i class="bi bi-check-circle-fill text-success me-2"></i>Acompte payé en ligne</span><span class="text-secondary">720 €</span>
+            </div>
+            <p class="text-secondary small mt-2 mb-0">Un lien unique, à vos couleurs — vos clients ne voient jamais la marque EventPlanner.</p>
+          </div>
+
+          <div class="mock-panel d-none" data-mock-panel="caisse">
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <div class="border rounded p-3 shadow-soft">
+                  <div class="text-secondary small">Ticket <?= '#' ?>V-0142</div>
+                  <div class="fs-5 fw-bold">32,00 €</div>
+                  <div class="text-secondary" style="font-size:.72rem;">2 coupes + 1 part de gâteau</div>
+                </div>
+              </div>
+              <div class="col-6 text-center">
+                <div class="border rounded p-2 d-inline-flex align-items-center justify-content-center shadow-soft" style="width:72px; height:72px;">
+                  <i class="bi bi-qr-code" style="font-size:2.2rem; color:var(--ep-ink);"></i>
+                </div>
+                <div class="text-secondary" style="font-size:.7rem;">Scanné par le client</div>
               </div>
             </div>
+            <p class="text-secondary small mb-0">Le client scanne son ticket et le télécharge sur son téléphone — sans imprimante, sans email à taper au comptoir.</p>
           </div>
-          <div class="border rounded p-3">
-            <div class="text-secondary small mb-2">Prochains événements</div>
-            <div class="d-flex justify-content-between border-bottom py-2 small">
-              <span>Mariage — Dupont</span><span class="text-secondary">14/09</span>
+
+          <div class="mock-panel d-none" data-mock-panel="ia">
+            <div class="border rounded p-2 mb-2 small" style="background:var(--ep-surface);">
+              <i class="bi bi-chat-left-text me-1 text-secondary"></i>« Mariage 120 invités, traiteur, DJ, déco florale »
             </div>
             <div class="d-flex justify-content-between border-bottom py-2 small">
-              <span>Séminaire — Acme Corp</span><span class="text-secondary">22/09</span>
+              <span>Traiteur — menu 3 services</span><span class="text-secondary">120 × 95 €</span>
+            </div>
+            <div class="d-flex justify-content-between border-bottom py-2 small">
+              <span>Animation DJ soirée</span><span class="text-secondary">950 €</span>
             </div>
             <div class="d-flex justify-content-between py-2 small">
-              <span>Anniversaire — Martin</span><span class="text-secondary">30/09</span>
+              <span>Décoration florale</span><span class="text-secondary">1 400 €</span>
             </div>
+            <p class="text-secondary small mt-2 mb-0"><i class="bi bi-stars me-1" style="color:var(--ep-primary);"></i>Lignes de devis générées en quelques secondes, à ajuster librement.</p>
+          </div>
+
+          <div class="mock-panel d-none" data-mock-panel="alertes">
+            <div class="alert py-2 px-3 mb-2 d-flex align-items-center gap-2" style="background:#fff7e6; border:1px solid #ffe9b8; color:#7a5600;">
+              <i class="bi bi-exclamation-circle"></i>
+              <span class="small fw-semibold mb-0">Devis Dupont sans réponse depuis 5 jours</span>
+            </div>
+            <div class="alert py-2 px-3 mb-2 d-flex align-items-center gap-2" style="background:#fdeaea; border:1px solid #f6c6c6; color:#8a2323;">
+              <i class="bi bi-exclamation-triangle"></i>
+              <span class="small fw-semibold mb-0">Facture FAC-2026-014 échue dans 3 jours</span>
+            </div>
+            <div class="alert py-2 px-3 mb-0 d-flex align-items-center gap-2" style="background:#eaf6ee; border:1px solid #bfe6cc; color:#1e6b3a;">
+              <i class="bi bi-info-circle"></i>
+              <span class="small fw-semibold mb-0">Acompte manquant à 15 jours de l'événement</span>
+            </div>
+          </div>
+
+          <div class="mock-panel d-none" data-mock-panel="rdv">
+            <div class="text-secondary small mb-2">Créneaux disponibles — jeudi 18</div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <?php foreach (['09:00', '09:30', '11:00', '14:30', '16:00'] as $slot): ?>
+                <span class="slot-chip"><?= $slot ?></span>
+              <?php endforeach; ?>
+            </div>
+            <p class="text-secondary small mb-0">Vos prospects réservent un premier contact seuls, sans échange d'emails.</p>
           </div>
         </div>
       </div>
@@ -257,12 +315,36 @@ use App\Core\View;
 <section class="cta-band py-5">
   <div class="container py-4 text-center">
     <h2 class="fw-bold mb-3">Prêt à simplifier la gestion de vos événements ?</h2>
-    <p class="mb-4" style="color:rgba(255,255,255,.85);">Créez votre compte en quelques minutes, sans engagement.</p>
-    <a href="<?= url('/register') ?>" class="btn btn-light btn-lg px-4">Créer mon compte</a>
+    <p class="mb-4" style="color:rgba(255,255,255,.85);">Créez votre compte en quelques minutes, sans engagement — ou testez l'outil tout de suite, sans inscription.</p>
+    <div class="d-flex flex-wrap justify-content-center gap-3">
+      <a href="<?= url('/register') ?>" class="btn btn-light btn-lg px-4">Créer mon compte</a>
+      <a href="<?= url('/demo') ?>" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-eye me-1"></i>Essayer la démo</a>
+    </div>
   </div>
 </section>
 
 <?php require dirname(__DIR__) . '/partials/site_footer.php'; ?>
 
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.mock-tab');
+  var panels = document.querySelectorAll('[data-mock-panel]');
+  var title = document.getElementById('mock-title');
+  var icons = {
+    portail: 'bi-palette2', caisse: 'bi-cash-coin', ia: 'bi-stars',
+    alertes: 'bi-bell', rdv: 'bi-calendar2-check'
+  };
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var key = tab.dataset.mock;
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      panels.forEach(function (p) { p.classList.toggle('d-none', p.dataset.mockPanel !== key); });
+      if (title) title.innerHTML = '<i class="bi ' + icons[key] + ' me-2" style="color:var(--ep-primary);"></i>' + tab.dataset.title;
+    });
+  });
+})();
+</script>
 </body>
 </html>

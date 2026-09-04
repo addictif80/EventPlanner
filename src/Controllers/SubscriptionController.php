@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Demo;
 use App\Core\Session;
 use App\Core\StripeBilling;
 use App\Core\View;
@@ -54,6 +55,7 @@ class SubscriptionController
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
+        self::blockInDemo();
 
         $orgId = Auth::organizationId();
         $subscription = OrganizationSubscription::forOrganization($orgId);
@@ -147,6 +149,7 @@ class SubscriptionController
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
+        self::blockInDemo();
 
         $orgId = Auth::organizationId();
         $subscription = OrganizationSubscription::forOrganization($orgId);
@@ -210,6 +213,7 @@ class SubscriptionController
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
+        self::blockInDemo();
 
         $orgId = Auth::organizationId();
         $type = input('type', '');
@@ -274,6 +278,7 @@ class SubscriptionController
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
+        self::blockInDemo();
 
         $orgId = Auth::organizationId();
         $subscription = OrganizationSubscription::forOrganization($orgId);
@@ -305,6 +310,7 @@ class SubscriptionController
     {
         Auth::requireAdmin();
         Csrf::verifyOrFail();
+        self::blockInDemo();
 
         $orgId = Auth::organizationId();
         $subscription = OrganizationSubscription::forOrganization($orgId);
@@ -504,6 +510,15 @@ class SubscriptionController
             Database::connection()
                 ->prepare('UPDATE organization_subscriptions SET past_due_since = COALESCE(past_due_since, NOW()) WHERE id = ?')
                 ->execute([$local['id']]);
+        }
+    }
+
+    /** The demo account already has every module unlocked (see bin/seed_demo_data.php) — no real Stripe account to charge. */
+    private static function blockInDemo(): void
+    {
+        if (Demo::isActive()) {
+            Session::flash('error', "Le changement d'abonnement est désactivé en mode démo.");
+            redirect('/subscription');
         }
     }
 

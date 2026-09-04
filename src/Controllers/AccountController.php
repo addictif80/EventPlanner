@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Demo;
 use App\Core\Session;
 use App\Core\View;
 
@@ -101,6 +102,11 @@ class AccountController
     {
         Auth::requireLogin();
         Csrf::verifyOrFail();
+
+        if (Demo::isActive()) {
+            Session::flash('error', 'La suppression de compte est désactivée en mode démo.');
+            redirect('/account');
+        }
 
         $pdo = Database::connection();
         $organizationId = Auth::organizationId();
