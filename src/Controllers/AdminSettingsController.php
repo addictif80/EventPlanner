@@ -70,6 +70,21 @@ class AdminSettingsController
         redirect('/admin/settings');
     }
 
+    public static function updateAi(): void
+    {
+        Auth::requireSuperAdmin();
+        Csrf::verifyOrFail();
+
+        $apiKey = input('anthropic_api_key', '');
+        if ($apiKey !== '') {
+            SystemSetting::update(['anthropic_api_key' => $apiKey]);
+        }
+
+        AdminActivityLog::record('system_ai_updated');
+        Session::flash('success', 'Configuration de l\'assistant IA enregistrée.');
+        redirect('/admin/settings');
+    }
+
     public static function testSmtp(): void
     {
         Auth::requireSuperAdmin();

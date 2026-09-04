@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS system_settings (
     vapid_public_key VARCHAR(255) DEFAULT '',
     vapid_private_key VARCHAR(255) DEFAULT '',
     subscription_auto_suspend_enabled TINYINT(1) NOT NULL DEFAULT 0,
-    subscription_grace_period_days INT UNSIGNED NOT NULL DEFAULT 7
+    subscription_grace_period_days INT UNSIGNED NOT NULL DEFAULT 7,
+    anthropic_api_key VARCHAR(255) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -164,6 +165,7 @@ CREATE TABLE IF NOT EXISTS company_settings (
     invoice_footer TEXT,
     stripe_secret_key VARCHAR(255) DEFAULT '',
     stripe_publishable_key VARCHAR(255) DEFAULT '',
+    anthropic_api_key VARCHAR(255) DEFAULT '',
     ics_feed_token VARCHAR(64) DEFAULT NULL,
     CONSTRAINT fk_company_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -653,6 +655,43 @@ CREATE TABLE IF NOT EXISTS pos_cash_movements (
     CONSTRAINT fk_pos_move_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Prise de rendez-vous en ligne : page publique de réservation par
+-- organisation (voir App\Controllers\PublicBookingController).
+CREATE TABLE IF NOT EXISTS booking_settings (
+    organization_id INT UNSIGNED PRIMARY KEY,
+    is_enabled TINYINT(1) NOT NULL DEFAULT 0,
+    public_slug VARCHAR(80) NOT NULL,
+    slot_duration_minutes INT UNSIGNED NOT NULL DEFAULT 30,
+    buffer_minutes INT UNSIGNED NOT NULL DEFAULT 0,
+    min_notice_hours INT UNSIGNED NOT NULL DEFAULT 24,
+    max_advance_days INT UNSIGNED NOT NULL DEFAULT 60,
+    weekly_hours TEXT COMMENT 'JSON {"1":{"start":"09:00","end":"18:00"}, ... "7":null}',
+    location_type VARCHAR(60) NOT NULL DEFAULT 'Téléphone',
+    meeting_instructions TEXT,
+    CONSTRAINT fk_booking_settings_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    UNIQUE KEY uniq_booking_slug (public_slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS appointments (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT UNSIGNED NOT NULL,
+    client_id INT UNSIGNED DEFAULT NULL,
+    prospect_name VARCHAR(190) NOT NULL,
+    prospect_email VARCHAR(190) NOT NULL,
+    prospect_phone VARCHAR(40) DEFAULT '',
+    subject VARCHAR(190) DEFAULT '',
+    starts_at DATETIME NOT NULL,
+    ends_at DATETIME NOT NULL,
+    status ENUM('confirmed', 'cancelled') NOT NULL DEFAULT 'confirmed',
+    notes TEXT,
+    cancel_token VARCHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_appointment_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_appointment_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+    UNIQUE KEY uniq_appointment_token (cancel_token),
+    KEY idx_appointment_org_time (organization_id, starts_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS equipment (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     organization_id INT UNSIGNED NOT NULL,
@@ -877,6 +916,28 @@ CREATE TABLE IF NOT EXISTS organization_subscription_items (
     CONSTRAINT fk_sub_items_package FOREIGN KEY (package_id) REFERENCES module_packages(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Invitations envoyées par le super admin à des prospects pour créer leur
+-- propre organisation (distinct des invitations d'équipe — users.invite_token
+-- — qui rattachent un membre à une organisation existante). Voir
+-- App\Controllers\AdminOrganizationInviteController / JoinController.
+CREATE TABLE IF NOT EXISTS organization_invites (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(190) NOT NULL,
+    note VARCHAR(255) DEFAULT '',
+    plan_id INT UNSIGNED DEFAULT NULL,
+    invited_by INT UNSIGNED DEFAULT NULL,
+    token VARCHAR(64) NOT NULL,
+    status ENUM('pending', 'accepted', 'revoked') NOT NULL DEFAULT 'pending',
+    accepted_organization_id INT UNSIGNED DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    accepted_at DATETIME DEFAULT NULL,
+    CONSTRAINT fk_org_invite_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE SET NULL,
+    CONSTRAINT fk_org_invite_invited_by FOREIGN KEY (invited_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_org_invite_org FOREIGN KEY (accepted_organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
+    UNIQUE KEY uniq_org_invite_token (token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 INSERT IGNORE INTO modules (module_key, name, description) VALUES
     ('contracts', 'Contrats & signature électronique', 'Génération de contrats et signature électronique en ligne.'),
     ('purchase_orders', 'Bons de commande fournisseurs', 'Émission de bons de commande auprès des prestataires.'),
@@ -889,7 +950,9 @@ INSERT IGNORE INTO modules (module_key, name, description) VALUES
     ('recurring_invoices', 'Factures récurrentes', 'Génération automatique des échéances de factures récurrentes.'),
     ('satisfaction_survey', 'Sondage de satisfaction', 'Envoi de sondages post-événement.'),
     ('calendar_ics', 'Flux calendrier ICS', 'Abonnement Google Calendar / Outlook / Apple Calendar.'),
-    ('pos', 'Caisse (point de vente)', "Caisse virtuelle sur place : encaissements, stock, moyens de paiement et tickets clients par email/QR code.");
+    ('pos', 'Caisse (point de vente)', "Caisse virtuelle sur place : encaissements, stock, moyens de paiement et tickets clients par email/QR code."),
+    ('ai_assistant', 'Assistant IA', "Génère des lignes de devis à partir d'un brief libre et rédige des relances de facture avec l'IA (Claude)."),
+    ('appointments', 'Prise de rendez-vous en ligne', "Page publique de réservation de créneaux pour vos prospects, sans échange d'emails.");
 
 -- Offre gratuite assignée automatiquement à l'inscription : la gestion
 -- d'événements de base (clients, événements, devis, factures) reste toujours

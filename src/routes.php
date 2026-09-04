@@ -31,6 +31,8 @@ use App\Controllers\ExportController;
 use App\Controllers\CalendarController;
 use App\Controllers\StripeController;
 use App\Controllers\RegisterController;
+use App\Controllers\JoinController;
+use App\Controllers\AdminOrganizationInviteController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminUserController;
 use App\Controllers\AdminDocumentController;
@@ -50,6 +52,9 @@ use App\Controllers\OrgLogoController;
 use App\Controllers\SearchController;
 use App\Controllers\PosController;
 use App\Controllers\PosReceiptController;
+use App\Controllers\AiController;
+use App\Controllers\BookingSettingsController;
+use App\Controllers\PublicBookingController;
 
 $router = new Router();
 
@@ -59,6 +64,8 @@ $router->post('/login', fn() => AuthController::login());
 $router->get('/logout', fn() => AuthController::logout());
 $router->get('/register', fn() => RegisterController::show());
 $router->post('/register', fn() => RegisterController::register());
+$router->get('/join/{token}', fn($p) => JoinController::show($p['token']));
+$router->post('/join/{token}', fn($p) => JoinController::store($p['token']));
 $router->get('/forgot-password', fn() => AuthController::showForgotPassword());
 $router->post('/forgot-password', fn() => AuthController::sendResetLink());
 $router->get('/reset-password/{token}', fn($p) => AuthController::showResetPassword($p['token']));
@@ -227,6 +234,22 @@ $router->post('/pos/{id}/close', fn($p) => PosController::close($p['id']));
 $router->get('/pos-receipt/{token}', fn($p) => PosReceiptController::show($p['token']));
 $router->get('/pos-receipt/{token}/download', fn($p) => PosReceiptController::download($p['token']));
 
+// Assistant IA
+$router->post('/quotes/ai-draft', fn() => AiController::draftQuote());
+$router->post('/invoices/{id}/ai-reminder', fn($p) => AiController::draftReminder($p['id']));
+
+// Prise de rendez-vous en ligne
+$router->get('/booking-settings', fn() => BookingSettingsController::edit());
+$router->post('/booking-settings', fn() => BookingSettingsController::update());
+$router->get('/appointments', fn() => BookingSettingsController::index());
+$router->post('/appointments/{id}/cancel', fn($p) => BookingSettingsController::cancel($p['id']));
+
+// Page publique de réservation (prospect)
+$router->get('/booking/cancel/{token}', fn($p) => PublicBookingController::cancel($p['token']));
+$router->get('/booking/{slug}/slots.json', fn($p) => PublicBookingController::slotsJson($p['slug']));
+$router->get('/booking/{slug}', fn($p) => PublicBookingController::show($p['slug']));
+$router->post('/booking/{slug}', fn($p) => PublicBookingController::store($p['slug']));
+
 // Contracts + e-signature
 $router->get('/contracts', fn() => ContractController::index());
 $router->get('/contracts/create', fn() => ContractController::create());
@@ -366,6 +389,11 @@ $router->get('/admin/settings', fn() => AdminSettingsController::index());
 $router->post('/admin/settings/smtp', fn() => AdminSettingsController::updateSmtp());
 $router->post('/admin/settings/smtp/test', fn() => AdminSettingsController::testSmtp());
 $router->post('/admin/settings/billing', fn() => AdminSettingsController::updateBilling());
+$router->post('/admin/settings/ai', fn() => AdminSettingsController::updateAi());
+$router->get('/admin/invitations', fn() => AdminOrganizationInviteController::index());
+$router->post('/admin/invitations', fn() => AdminOrganizationInviteController::store());
+$router->post('/admin/invitations/{id}/resend', fn($p) => AdminOrganizationInviteController::resend($p['id']));
+$router->post('/admin/invitations/{id}/revoke', fn($p) => AdminOrganizationInviteController::revoke($p['id']));
 
 $router->get('/admin/pages', fn() => AdminSiteController::index());
 $router->get('/admin/pages/create', fn() => AdminSiteController::createPage());

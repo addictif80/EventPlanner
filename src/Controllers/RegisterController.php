@@ -11,6 +11,7 @@ use App\Models\BlockedEmail;
 use App\Models\CompanySettings;
 use App\Models\EmailTemplate;
 use App\Models\Organization;
+use App\Models\Plan;
 use App\Models\User;
 
 class RegisterController
@@ -35,6 +36,30 @@ class RegisterController
         $email = input('email', '');
         $password = input('password', '');
 
+        $errors = self::validate($orgName, $name, $email, $password);
+        if (!empty($errors)) {
+            Session::flash('error', implode(' ', $errors));
+            $_SESSION['old'] = ['organization_name' => $orgName, 'name' => $name, 'email' => $email];
+            redirect('/register');
+        }
+
+        try {
+            $result = self::provision($orgName, $name, $email, $password);
+        } catch (\Throwable $e) {
+            Session::flash('error', "L'inscription a échoué. Merci de réessayer.");
+            redirect('/register');
+        }
+
+        \App\Models\Notification::toPlatform('system', 'Nouvelle organisation', $orgName . ' vient de s\'inscrire.', '/admin/organizations/' . $result['organization_id']);
+
+        Auth::login($result['user_id'], $result['organization_id']);
+        Session::flash('success', 'Bienvenue sur EventPlanner ! Pensez à configurer votre serveur SMTP dans Paramètres pour pouvoir envoyer des emails.');
+        redirect('/');
+    }
+
+    /** @return string[] validation error messages, empty if valid */
+    public static function validate(string $orgName, string $name, string $email, string $password): array
+    {
         $errors = [];
         if ($orgName === '') {
             $errors[] = "Le nom de votre entreprise/agence est obligatoire.";
@@ -61,12 +86,21 @@ class RegisterController
             }
         }
 
-        if (!empty($errors)) {
-            Session::flash('error', implode(' ', $errors));
-            $_SESSION['old'] = ['organization_name' => $orgName, 'name' => $name, 'email' => $email];
-            redirect('/register');
-        }
+        return $errors;
+    }
 
+    /**
+     * Creates a brand-new organization with its admin user and every
+     * baseline record a fresh tenant needs (company settings, SMTP row,
+     * default event types, email templates, subscription). Shared by the
+     * open self-registration form and JoinController (super-admin-issued
+     * organization invites) so both paths provision identically.
+     *
+     * @throws \Throwable on failure (already rolled back)
+     * @return array{organization_id:int, user_id:int}
+     */
+    public static function provision(string $orgName, string $name, string $email, string $password, ?int $planId = null): array
+    {
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -98,26 +132,21 @@ class RegisterController
 
             // Guarded: the plans/organization_subscriptions tables only exist
             // once migration 005_billing.sql has been applied — older installs
-            // that haven't migrated yet must still allow self-registration.
+            // that haven't migrated yet must still allow provisioning.
             if ($pdo->query("SHOW TABLES LIKE 'plans'")->fetch()) {
-                $defaultPlanId = $pdo->query('SELECT id FROM plans WHERE is_default_signup = 1 ORDER BY id LIMIT 1')->fetchColumn();
-                if ($defaultPlanId) {
+                $chosenPlanId = $planId ?? Plan::defaultSignupPlanId();
+                if ($chosenPlanId) {
                     $pdo->prepare('INSERT INTO organization_subscriptions (organization_id, plan_id, status) VALUES (?, ?, "active")')
-                        ->execute([$organizationId, $defaultPlanId]);
+                        ->execute([$organizationId, $chosenPlanId]);
                 }
             }
 
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
-            Session::flash('error', "L'inscription a échoué. Merci de réessayer.");
-            redirect('/register');
+            throw $e;
         }
 
-        \App\Models\Notification::toPlatform('system', 'Nouvelle organisation', $orgName . ' vient de s\'inscrire.', '/admin/organizations/' . $organizationId);
-
-        Auth::login($userId, $organizationId);
-        Session::flash('success', 'Bienvenue sur EventPlanner ! Pensez à configurer votre serveur SMTP dans Paramètres pour pouvoir envoyer des emails.');
-        redirect('/');
+        return ['organization_id' => $organizationId, 'user_id' => $userId];
     }
 }

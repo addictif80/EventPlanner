@@ -21,10 +21,14 @@ $remaining = (float)$invoice['total'] - (float)$invoice['amount_paid'];
       </button>
     </form>
     <?php if (in_array($invoice['status'], ['sent', 'partially_paid', 'overdue'], true)): ?>
-    <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/remind') ?>" onsubmit="return confirm('Envoyer une relance de paiement au client ?');">
-      <?= csrf_field() ?>
-      <button class="btn btn-outline-warning btn-sm" <?= $smtpConfigured ? '' : 'disabled' ?>><i class="bi bi-bell"></i> Relancer</button>
-    </form>
+      <?php if (\App\Core\ModuleAccess::has('ai_assistant')): ?>
+      <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#remind-modal" <?= $smtpConfigured ? '' : 'disabled' ?>><i class="bi bi-bell"></i> Relancer</button>
+      <?php else: ?>
+      <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/remind') ?>" onsubmit="return confirm('Envoyer une relance de paiement au client ?');">
+        <?= csrf_field() ?>
+        <button class="btn btn-outline-warning btn-sm" <?= $smtpConfigured ? '' : 'disabled' ?>><i class="bi bi-bell"></i> Relancer</button>
+      </form>
+      <?php endif; ?>
     <?php endif; ?>
   </div>
 </div>
@@ -155,3 +159,59 @@ $remaining = (float)$invoice['total'] - (float)$invoice['amount_paid'];
     </div></div>
   </div>
 </div>
+
+<?php if (\App\Core\ModuleAccess::has('ai_assistant') && in_array($invoice['status'], ['sent', 'partially_paid', 'overdue'], true)): ?>
+<div class="modal fade" id="remind-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="<?= url('/invoices/' . $invoice['id'] . '/remind') ?>" id="remind-form">
+        <?= csrf_field() ?>
+        <input type="hidden" name="custom_intro" id="remind-custom-intro">
+        <div class="modal-header"><h3 class="modal-title h6">Relance de paiement</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <button type="button" id="remind-ai-btn" class="btn btn-outline-primary btn-sm mb-2"><i class="bi bi-stars me-1"></i>Générer avec l'IA</button>
+          <div id="remind-ai-status" class="small text-muted mb-2"></div>
+          <label class="form-label small">Texte d'introduction (optionnel — laissez vide pour utiliser le modèle par défaut)</label>
+          <textarea id="remind-intro-text" class="form-control" rows="4" placeholder="Nous vous rappelons que la facture suivante reste impayée à ce jour."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-warning">Envoyer la relance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('remind-ai-btn');
+  var status = document.getElementById('remind-ai-status');
+  var textarea = document.getElementById('remind-intro-text');
+  var form = document.getElementById('remind-form');
+  var hidden = document.getElementById('remind-custom-intro');
+
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    status.textContent = 'Génération en cours...';
+    var csrfToken = form.querySelector('input[name="csrf_token"]').value;
+    fetch(<?= json_encode(url('/invoices/' . $invoice['id'] . '/ai-reminder')) ?>, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+      body: 'csrf_token=' + encodeURIComponent(csrfToken),
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      btn.disabled = false;
+      if (data.error) { status.textContent = data.error; return; }
+      textarea.value = data.intro;
+      status.textContent = "Relisez et ajustez avant l'envoi.";
+    }).catch(function () {
+      btn.disabled = false;
+      status.textContent = 'Échec de la génération.';
+    });
+  });
+
+  form.addEventListener('submit', function () {
+    hidden.value = textarea.value.trim();
+  });
+})();
+</script>
+<?php endif; ?>

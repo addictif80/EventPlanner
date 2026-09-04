@@ -249,9 +249,10 @@ class InvoiceController
         $company = CompanySettings::get();
         $template = EmailTemplate::get('reminder');
         $subject = str_replace('{number}', $invoice['invoice_number'], $template['subject'] ?? 'Rappel — facture {number} en attente de paiement');
+        $customIntro = trim(input('custom_intro', ''));
 
         ob_start();
-        View::render('invoices/reminder_email', ['invoice' => $invoice, 'company' => $company, 'intro' => $template['intro'] ?? null], layout: null);
+        View::render('invoices/reminder_email', ['invoice' => $invoice, 'company' => $company, 'intro' => $customIntro !== '' ? $customIntro : ($template['intro'] ?? null)], layout: null);
         $html = ob_get_clean();
 
         try {
