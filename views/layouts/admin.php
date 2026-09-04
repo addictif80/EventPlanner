@@ -41,6 +41,7 @@ $flashes = flashes();
       <ul class="nav nav-pills flex-column gap-1">
         <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin') ?>"><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</a></li>
         <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/organizations') ?>"><i class="bi bi-buildings me-2"></i>Organisations</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/invitations') ?>"><i class="bi bi-envelope-paper me-2"></i>Invitations</a></li>
         <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/users') ?>"><i class="bi bi-people me-2"></i>Utilisateurs</a></li>
         <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/documents') ?>"><i class="bi bi-file-earmark-text me-2"></i>Documents</a></li>
         <li class="nav-item"><a class="nav-link text-white" href="<?= url('/admin/tickets') ?>"><i class="bi bi-life-preserver me-2"></i>Tickets support</a></li>

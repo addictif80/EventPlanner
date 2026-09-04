@@ -31,6 +31,8 @@ use App\Controllers\ExportController;
 use App\Controllers\CalendarController;
 use App\Controllers\StripeController;
 use App\Controllers\RegisterController;
+use App\Controllers\JoinController;
+use App\Controllers\AdminOrganizationInviteController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminUserController;
 use App\Controllers\AdminDocumentController;
@@ -62,6 +64,8 @@ $router->post('/login', fn() => AuthController::login());
 $router->get('/logout', fn() => AuthController::logout());
 $router->get('/register', fn() => RegisterController::show());
 $router->post('/register', fn() => RegisterController::register());
+$router->get('/join/{token}', fn($p) => JoinController::show($p['token']));
+$router->post('/join/{token}', fn($p) => JoinController::store($p['token']));
 $router->get('/forgot-password', fn() => AuthController::showForgotPassword());
 $router->post('/forgot-password', fn() => AuthController::sendResetLink());
 $router->get('/reset-password/{token}', fn($p) => AuthController::showResetPassword($p['token']));
@@ -386,6 +390,10 @@ $router->post('/admin/settings/smtp', fn() => AdminSettingsController::updateSmt
 $router->post('/admin/settings/smtp/test', fn() => AdminSettingsController::testSmtp());
 $router->post('/admin/settings/billing', fn() => AdminSettingsController::updateBilling());
 $router->post('/admin/settings/ai', fn() => AdminSettingsController::updateAi());
+$router->get('/admin/invitations', fn() => AdminOrganizationInviteController::index());
+$router->post('/admin/invitations', fn() => AdminOrganizationInviteController::store());
+$router->post('/admin/invitations/{id}/resend', fn($p) => AdminOrganizationInviteController::resend($p['id']));
+$router->post('/admin/invitations/{id}/revoke', fn($p) => AdminOrganizationInviteController::revoke($p['id']));
 
 $router->get('/admin/pages', fn() => AdminSiteController::index());
 $router->get('/admin/pages/create', fn() => AdminSiteController::createPage());
