@@ -39,6 +39,44 @@ $clientName = $event['company_name'] ?: trim($event['first_name'] . ' ' . $event
   <?php endif; ?>
 </div>
 
+<?php if ($profitability['invoiced'] > 0 || $profitability['cost'] > 0): ?>
+<?php
+  $marginPct = $profitability['marginPercent'];
+  $marginColor = $marginPct === null ? 'secondary' : ($marginPct < 0 ? 'danger' : ($marginPct < 15 ? 'warning' : 'success'));
+?>
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="h6 mb-0"><i class="bi bi-graph-up-arrow me-1"></i>Rentabilité</h3>
+      <?php if ($marginPct !== null): ?>
+        <span class="badge bg-<?= $marginColor ?>"><?= $marginPct ?>% de marge</span>
+      <?php endif; ?>
+    </div>
+    <div class="row g-3 text-center">
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">Facturé</div>
+        <div class="fs-5 fw-bold"><?= View::money($profitability['invoiced']) ?></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">Encaissé</div>
+        <div class="fs-5 fw-bold"><?= View::money($profitability['collected']) ?></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">Coût prestataires</div>
+        <div class="fs-5 fw-bold text-danger"><?= View::money($profitability['cost']) ?></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted small">Marge</div>
+        <div class="fs-5 fw-bold text-<?= $marginColor ?>"><?= View::money($profitability['margin']) ?></div>
+      </div>
+    </div>
+    <?php if ($marginPct !== null && $marginPct < 15): ?>
+      <p class="text-<?= $marginColor ?> small mt-2 mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Marge faible sur cet événement — vérifiez les coûts prestataires ou le montant facturé.</p>
+    <?php endif; ?>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="row g-3 mb-3">
   <div class="col-md-4">
     <div class="card h-100"><div class="card-body">

@@ -6,9 +6,21 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\ModuleAccess;
 use App\Core\View;
+use App\Models\Event;
 
 class ReportController
 {
+    public static function profitability(): void
+    {
+        ModuleAccess::requireModule('reports');
+        $rows = Event::profitabilityForAll();
+
+        View::render('reports/profitability', [
+            'title' => 'Rentabilité par événement',
+            'rows' => $rows,
+        ]);
+    }
+
     public static function index(): void
     {
         ModuleAccess::requireModule('reports');

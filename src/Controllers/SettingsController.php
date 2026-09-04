@@ -130,6 +130,27 @@ class SettingsController
         redirect('/settings');
     }
 
+    public static function updateDirectory(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        $listed = (bool) input('directory_listed');
+        $data = [
+            'directory_listed' => $listed ? 1 : 0,
+            'directory_specialties' => input('directory_specialties', ''),
+            'directory_description' => input('directory_description', ''),
+        ];
+        if ($listed) {
+            $data['directory_slug'] = CompanySettings::ensureDirectorySlug();
+        }
+
+        CompanySettings::update($data);
+        ActivityLog::record('Modification annuaire public', 'company_settings');
+        Session::flash('success', 'Réglages de l\'annuaire public enregistrés.');
+        redirect('/settings');
+    }
+
     public static function updateSmtp(): void
     {
         Auth::requireAdmin();

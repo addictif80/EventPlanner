@@ -75,10 +75,47 @@ class SurveyController
         if (!$survey) { http_response_code(404); die('Lien invalide.'); }
 
         $stmt = Database::connection()->prepare(
-            'UPDATE satisfaction_surveys SET rating = ?, comments = ?, submitted_at = NOW() WHERE id = ?'
+            'UPDATE satisfaction_surveys SET rating = ?, comments = ?, consent_public = ?, submitted_at = NOW() WHERE id = ?'
         );
-        $stmt->execute([(int) input('rating', 5), input('comments', ''), $survey['id']]);
+        $stmt->execute([(int) input('rating', 5), input('comments', ''), input('consent_public') ? 1 : 0, $survey['id']]);
 
         View::render('survey/thanks', [], layout: null);
+    }
+
+    /** Org-side list of every survey response, with the publish toggle for the public directory. */
+    public static function index(): void
+    {
+        ModuleAccess::requireModule('satisfaction_survey');
+        $stmt = Database::connection()->prepare(
+            "SELECT s.*, e.title AS event_title, c.first_name, c.last_name, c.company_name
+             FROM satisfaction_surveys s
+             JOIN events e ON e.id = s.event_id
+             JOIN clients c ON c.id = s.client_id
+             WHERE s.organization_id = ? AND s.submitted_at IS NOT NULL
+             ORDER BY s.submitted_at DESC"
+        );
+        $stmt->execute([Auth::organizationId()]);
+
+        View::render('survey/index', ['title' => 'Avis clients', 'surveys' => $stmt->fetchAll()]);
+    }
+
+    /** Only reviews the client explicitly consented to can ever be published — the org merely curates among those. */
+    public static function togglePublish(string $id): void
+    {
+        ModuleAccess::requireModule('satisfaction_survey');
+        Csrf::verifyOrFail();
+
+        $stmt = Database::connection()->prepare('SELECT consent_public, is_published FROM satisfaction_surveys WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$id, Auth::organizationId()]);
+        $survey = $stmt->fetch();
+
+        if ($survey && $survey['consent_public']) {
+            Database::connection()->prepare('UPDATE satisfaction_surveys SET is_published = ? WHERE id = ? AND organization_id = ?')
+                ->execute([$survey['is_published'] ? 0 : 1, $id, Auth::organizationId()]);
+        } else {
+            Session::flash('error', "Cet avis ne peut pas être publié : le client n'a pas donné son consentement.");
+        }
+
+        redirect('/surveys');
     }
 }

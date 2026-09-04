@@ -47,4 +47,77 @@ class Event extends Model
         $stmt->execute([Auth::organizationId()]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Real margin for one event: revenue is what has actually been invoiced
+     * to the client (not just quoted — a quote can change before it's
+     * billed), cost is what event_providers.cost carries for that event
+     * (manually entered, or auto-synced from a confirmed purchase order —
+     * see PurchaseOrder::syncEventProvider()). Equipment/matériel bookings
+     * aren't priced in this app, so they're not part of the cost side.
+     *
+     * @return array{invoiced:float, collected:float, cost:float, margin:float, marginPercent:?float}
+     */
+    public static function profitability(int $eventId): array
+    {
+        $pdo = Database::connection();
+        $orgId = Auth::organizationId();
+
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(total), 0) FROM invoices WHERE event_id = ? AND organization_id = ? AND status != 'cancelled'");
+        $stmt->execute([$eventId, $orgId]);
+        $invoiced = (float) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(amount_paid), 0) FROM invoices WHERE event_id = ? AND organization_id = ? AND status != 'cancelled'");
+        $stmt->execute([$eventId, $orgId]);
+        $collected = (float) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(cost), 0) FROM event_providers WHERE event_id = ? AND organization_id = ? AND status != 'cancelled'");
+        $stmt->execute([$eventId, $orgId]);
+        $cost = (float) $stmt->fetchColumn();
+
+        $margin = $invoiced - $cost;
+
+        return [
+            'invoiced' => $invoiced,
+            'collected' => $collected,
+            'cost' => $cost,
+            'margin' => $margin,
+            'marginPercent' => $invoiced > 0 ? round($margin / $invoiced * 100, 1) : null,
+        ];
+    }
+
+    /** Same computation across every event, for the org-wide profitability report. */
+    public static function profitabilityForAll(): array
+    {
+        $sql = "SELECT e.id, e.title, e.event_date, e.status,
+                       c.first_name, c.last_name, c.company_name,
+                       COALESCE(inv.invoiced, 0) AS invoiced,
+                       COALESCE(prov.cost, 0) AS cost
+                FROM events e
+                LEFT JOIN clients c ON c.id = e.client_id
+                LEFT JOIN (
+                    SELECT event_id, SUM(total) AS invoiced FROM invoices
+                    WHERE organization_id = ? AND status != 'cancelled' GROUP BY event_id
+                ) inv ON inv.event_id = e.id
+                LEFT JOIN (
+                    SELECT event_id, SUM(cost) AS cost FROM event_providers
+                    WHERE organization_id = ? AND status != 'cancelled' GROUP BY event_id
+                ) prov ON prov.event_id = e.id
+                WHERE e.organization_id = ? AND e.status != 'cancelled'
+                ORDER BY e.event_date DESC";
+        $stmt = Database::connection()->prepare($sql);
+        $orgId = Auth::organizationId();
+        $stmt->execute([$orgId, $orgId, $orgId]);
+
+        return array_map(function ($row) {
+            $invoiced = (float) $row['invoiced'];
+            $cost = (float) $row['cost'];
+            $margin = $invoiced - $cost;
+            $row['invoiced'] = $invoiced;
+            $row['cost'] = $cost;
+            $row['margin'] = $margin;
+            $row['marginPercent'] = $invoiced > 0 ? round($margin / $invoiced * 100, 1) : null;
+            return $row;
+        }, $stmt->fetchAll());
+    }
 }

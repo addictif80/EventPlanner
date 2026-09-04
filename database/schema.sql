@@ -168,7 +168,12 @@ CREATE TABLE IF NOT EXISTS company_settings (
     stripe_publishable_key VARCHAR(255) DEFAULT '',
     anthropic_api_key VARCHAR(255) DEFAULT '',
     ics_feed_token VARCHAR(64) DEFAULT NULL,
-    CONSTRAINT fk_company_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    directory_listed TINYINT(1) NOT NULL DEFAULT 0,
+    directory_slug VARCHAR(80) DEFAULT NULL,
+    directory_description TEXT,
+    directory_specialties VARCHAR(255) DEFAULT '',
+    CONSTRAINT fk_company_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    UNIQUE KEY uniq_directory_slug (directory_slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS smtp_settings (
@@ -811,6 +816,8 @@ CREATE TABLE IF NOT EXISTS satisfaction_surveys (
     comments TEXT,
     sent_at DATETIME DEFAULT NULL,
     submitted_at DATETIME DEFAULT NULL,
+    consent_public TINYINT(1) NOT NULL DEFAULT 0,
+    is_published TINYINT(1) NOT NULL DEFAULT 0,
     CONSTRAINT fk_survey_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
     CONSTRAINT fk_survey_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     CONSTRAINT fk_survey_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE

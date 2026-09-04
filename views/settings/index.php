@@ -4,6 +4,7 @@
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-smtp">Email (SMTP)</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-templates">Modèles d'emails</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-integrations">Intégrations</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-directory">Annuaire public</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">Organisation</a></li>
   <li class="nav-item"><a class="nav-link" href="<?= url('/settings/activity-log') ?>">Journal d'activité</a></li>
 </ul>
@@ -179,6 +180,36 @@
       <h3 class="h6">Export emailing</h3>
       <p class="text-muted small">Exportez la liste de vos clients (email, nom) au format CSV pour l'importer dans Mailchimp ou tout autre outil d'emailing.</p>
       <a href="<?= url('/export/clients.csv') ?>" class="btn btn-outline-dark btn-sm">Exporter les emails clients (CSV)</a>
+    </div></div>
+  </div>
+
+  <div class="tab-pane fade" id="tab-directory">
+    <div class="card mb-3"><div class="card-body">
+      <h3 class="h6">Annuaire public des organisateurs</h3>
+      <p class="text-muted small">
+        Figurez gratuitement dans l'annuaire public EventPlanner pour être trouvé par de nouveaux prospects.
+        Vos avis clients ne sont affichés que si le client concerné a explicitement autorisé leur publication
+        (voir <a href="<?= url('/surveys') ?>">Avis clients</a>).
+      </p>
+      <form method="post" action="<?= url('/settings/directory') ?>">
+        <?= csrf_field() ?>
+        <div class="form-check form-switch mb-3">
+          <input type="checkbox" class="form-check-input" id="directory_listed" name="directory_listed" value="1" <?= !empty($company['directory_listed']) ? 'checked' : '' ?>>
+          <label class="form-check-label" for="directory_listed">Apparaître dans l'annuaire public</label>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Spécialités (séparées par des virgules)</label>
+          <input type="text" name="directory_specialties" class="form-control" value="<?= View::e($company['directory_specialties'] ?? '') ?>" placeholder="Mariages, Séminaires, Anniversaires">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Présentation publique</label>
+          <textarea name="directory_description" class="form-control" rows="3" placeholder="Décrivez votre agence en quelques phrases pour les prospects de l'annuaire."><?= View::e($company['directory_description'] ?? '') ?></textarea>
+        </div>
+        <?php if (!empty($company['directory_slug'])): ?>
+          <p class="small text-muted">Votre page publique : <a href="<?= url('/annuaire/' . $company['directory_slug']) ?>" target="_blank"><?= View::e(full_url('/annuaire/' . $company['directory_slug'])) ?></a></p>
+        <?php endif; ?>
+        <button class="btn btn-primary">Enregistrer</button>
+      </form>
     </div></div>
   </div>
 

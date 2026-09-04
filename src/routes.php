@@ -34,6 +34,7 @@ use App\Controllers\RegisterController;
 use App\Controllers\JoinController;
 use App\Controllers\AdminOrganizationInviteController;
 use App\Controllers\DemoController;
+use App\Controllers\DirectoryController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminUserController;
 use App\Controllers\AdminDocumentController;
@@ -68,6 +69,8 @@ $router->post('/register', fn() => RegisterController::register());
 $router->get('/join/{token}', fn($p) => JoinController::show($p['token']));
 $router->post('/join/{token}', fn($p) => JoinController::store($p['token']));
 $router->get('/demo', fn() => DemoController::start());
+$router->get('/annuaire', fn() => DirectoryController::index());
+$router->get('/annuaire/{slug}', fn($p) => DirectoryController::show($p['slug']));
 $router->get('/forgot-password', fn() => AuthController::showForgotPassword());
 $router->post('/forgot-password', fn() => AuthController::sendResetLink());
 $router->get('/reset-password/{token}', fn($p) => AuthController::showResetPassword($p['token']));
@@ -165,6 +168,7 @@ $router->post('/tasks/{id}/delete', fn($p) => TaskController::destroy($p['id']))
 // Settings
 $router->get('/settings', fn() => SettingsController::index());
 $router->post('/settings/company', fn() => SettingsController::updateCompany());
+$router->post('/settings/directory', fn() => SettingsController::updateDirectory());
 $router->post('/settings/smtp', fn() => SettingsController::updateSmtp());
 $router->post('/settings/smtp/test', fn() => SettingsController::testSmtp());
 $router->post('/settings/email-templates', fn() => SettingsController::updateEmailTemplates());
@@ -308,12 +312,15 @@ $router->post('/notes/{id}/delete', fn($p) => NoteController::destroy($p['id']))
 
 // Sondage de satisfaction
 $router->post('/events/{id}/survey/send', fn($p) => SurveyController::send($p['id']));
+$router->get('/surveys', fn() => SurveyController::index());
+$router->post('/surveys/{id}/publish', fn($p) => SurveyController::togglePublish($p['id']));
 
 // Portail client
 $router->post('/clients/{id}/portal-link', fn($p) => PortalController::generateLink($p['id']));
 
 // Reporting & exports
 $router->get('/reports', fn() => ReportController::index());
+$router->get('/reports/profitability', fn() => ReportController::profitability());
 $router->get('/reports/urssaf', fn() => ReportController::urssaf());
 $router->get('/reports/urssaf/export.csv', fn() => ReportController::urssafExport());
 $router->get('/export/invoices.csv', fn() => ExportController::invoicesCsv());

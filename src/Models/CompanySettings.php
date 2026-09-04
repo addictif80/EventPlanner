@@ -43,4 +43,38 @@ class CompanySettings
         $stmt = Database::connection()->prepare('INSERT INTO company_settings (organization_id) VALUES (?)');
         $stmt->execute([$organizationId]);
     }
+
+    /** Stable public-directory slug, generated once from the company name (see DirectoryController). */
+    public static function ensureDirectorySlug(): string
+    {
+        $existing = self::get()['directory_slug'] ?? null;
+        if (!empty($existing)) {
+            return $existing;
+        }
+
+        $base = self::slugify(self::get()['company_name'] ?? '') ?: 'organisation';
+        $pdo = Database::connection();
+        $slug = $base;
+        $suffix = 1;
+        $stmt = $pdo->prepare('SELECT 1 FROM company_settings WHERE directory_slug = ? LIMIT 1');
+        do {
+            $stmt->execute([$slug]);
+            if (!$stmt->fetchColumn()) {
+                break;
+            }
+            $suffix++;
+            $slug = $base . '-' . $suffix;
+        } while (true);
+
+        self::update(['directory_slug' => $slug]);
+
+        return $slug;
+    }
+
+    private static function slugify(string $text): string
+    {
+        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT', $text) ?: $text;
+        $slug = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $ascii));
+        return trim($slug, '-');
+    }
 }
