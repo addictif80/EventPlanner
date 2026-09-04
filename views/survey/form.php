@@ -28,6 +28,10 @@
           <label class="form-label">Commentaires</label>
           <textarea name="comments" class="form-control" rows="4"></textarea>
         </div>
+        <div class="form-check mb-3">
+          <input type="checkbox" class="form-check-input" id="consent_public" name="consent_public" value="1">
+          <label class="form-check-label small" for="consent_public">J'autorise la publication (éventuelle) de cet avis sur la page publique de l'organisateur.</label>
+        </div>
         <button class="btn btn-primary w-100">Envoyer mon avis</button>
       </form>
     </div>

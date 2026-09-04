@@ -62,6 +62,9 @@ $flashes = flashes();
         <?php if (ModuleAccess::has('appointments')): ?>
         <li class="nav-item"><a class="nav-link text-white" href="<?= url('/appointments') ?>"><i class="bi bi-calendar2-check me-2"></i>Rendez-vous</a></li>
         <?php endif; ?>
+        <?php if (ModuleAccess::has('satisfaction_survey')): ?>
+        <li class="nav-item"><a class="nav-link text-white" href="<?= url('/surveys') ?>"><i class="bi bi-star me-2"></i>Avis clients</a></li>
+        <?php endif; ?>
         <li class="nav-item mt-2"><span class="text-uppercase small text-white-50 px-2">Ressources</span></li>
         <li class="nav-item"><a class="nav-link text-white" href="<?= url('/providers') ?>"><i class="bi bi-truck me-2"></i>Prestataires</a></li>
         <?php if (ModuleAccess::has('purchase_orders')): ?>

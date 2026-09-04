@@ -98,6 +98,7 @@ class EventController
             'equipmentBookings' => Equipment::bookingsForEvent((int) $id),
             'equipmentList' => Equipment::all('name ASC'),
             'notes' => $notes,
+            'profitability' => Event::profitability((int) $id),
         ]);
     }
 

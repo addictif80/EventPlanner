@@ -1,7 +1,8 @@
 <?php use App\Core\View; ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
-<div class="d-flex justify-content-end mb-3">
+<div class="d-flex justify-content-end gap-2 mb-3">
+  <a href="<?= url('/reports/profitability') ?>" class="btn btn-outline-dark btn-sm"><i class="bi bi-graph-up-arrow me-1"></i>Rentabilité par événement</a>
   <a href="<?= url('/reports/urssaf') ?>" class="btn btn-outline-dark btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Aide à la déclaration URSSAF</a>
 </div>
 
