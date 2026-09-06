@@ -357,6 +357,9 @@ class SubscriptionController
             case 'invoice.payment_failed':
                 self::handlePaymentFailed($object);
                 break;
+            case 'invoice.paid':
+                self::handleInvoicePaid($object);
+                break;
         }
 
         http_response_code(200);
@@ -511,6 +514,52 @@ class SubscriptionController
                 ->prepare('UPDATE organization_subscriptions SET past_due_since = COALESCE(past_due_since, NOW()) WHERE id = ?')
                 ->execute([$local['id']]);
         }
+    }
+
+    /**
+     * Journals every real Stripe payment the platform actually receives from
+     * an organization's subscription — this is the platform's own revenue
+     * ledger (App\Models\PlatformRevenueTransaction), used for the operator's
+     * monthly URSSAF report (bin/send_urssaf_platform_report.php). Deduplicated
+     * on the Stripe invoice id: Stripe can redeliver the same webhook event.
+     */
+    private static function handleInvoicePaid(array $invoice): void
+    {
+        $invoiceId = $invoice['id'] ?? null;
+        $amountPaid = $invoice['amount_paid'] ?? null;
+        if (!$invoiceId || $amountPaid === null) {
+            return;
+        }
+
+        $subscriptionId = $invoice['subscription'] ?? null;
+        $organizationId = null;
+        $organizationName = '';
+
+        if ($subscriptionId) {
+            $local = OrganizationSubscription::findByStripeSubscriptionId($subscriptionId);
+            if ($local) {
+                $organizationId = (int) $local['organization_id'];
+                $org = Organization::find($organizationId);
+                $organizationName = $org['name'] ?? '';
+            }
+        }
+
+        $paidAt = isset($invoice['status_transitions']['paid_at'])
+            ? date('Y-m-d H:i:s', $invoice['status_transitions']['paid_at'])
+            : date('Y-m-d H:i:s');
+
+        Database::connection()->prepare(
+            'INSERT IGNORE INTO platform_revenue_transactions (organization_id, organization_name, stripe_invoice_id, amount, currency, description, paid_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        )->execute([
+            $organizationId,
+            $organizationName,
+            $invoiceId,
+            $amountPaid / 100,
+            $invoice['currency'] ?? 'eur',
+            $invoice['description'] ?? 'Abonnement EventPlanner',
+            $paidAt,
+        ]);
     }
 
     /** The demo account already has every module unlocked (see bin/seed_demo_data.php) — no real Stripe account to charge. */

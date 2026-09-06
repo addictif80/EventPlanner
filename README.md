@@ -186,6 +186,11 @@ qu'un site CyberPanel crée pour sa base de données).
 # identifiants publiés sur la page de connexion) avec des données fraîches,
 # chaque nuit à 3h — annule toutes les modifications faites par les visiteurs
 0 3 * * * php /chemin/vers/EventPlanner/bin/seed_demo_data.php
+
+# Rapport URSSAF mensuel de la plateforme (désactivé par défaut, à activer
+# dans Super admin > Paramètres système > Facturation), tous les jours à 7h
+# — ne fait réellement quelque chose que le jour du mois configuré
+0 7 * * * php /chemin/vers/EventPlanner/bin/send_urssaf_platform_report.php
 ```
 
 ## Fonctionnalités couvertes
@@ -409,7 +414,14 @@ renseignez :
 - **Secret du webhook** : créez un endpoint Stripe (Développeurs > Webhooks)
   pointant vers `https://votre-domaine.tld/subscription/webhook`, écoutant
   les événements `checkout.session.completed`,
-  `customer.subscription.updated`, `customer.subscription.deleted` et
-  `invoice.payment_failed` ; copiez le secret de signature (`whsec_...`)
-  dans ce champ. La vérification de signature est implémentée nativement
-  (`StripeBilling::verifyWebhookSignature()`, HMAC SHA-256), sans SDK Stripe.
+  `customer.subscription.updated`, `customer.subscription.deleted`,
+  `invoice.payment_failed` et `invoice.paid` ; copiez le secret de signature
+  (`whsec_...`) dans ce champ. La vérification de signature est implémentée
+  nativement (`StripeBilling::verifyWebhookSignature()`, HMAC SHA-256), sans
+  SDK Stripe. `invoice.paid` journalise chaque encaissement réel dans
+  `platform_revenue_transactions`, utilisé par le rapport URSSAF mensuel
+  ci-dessous.
+- **Rapport URSSAF mensuel** (auto-entrepreneur) : renseignez un jour du mois
+  (1-28) dans ce même écran pour recevoir chaque mois, par email, un PDF du
+  chiffre d'affaires plateforme réellement encaissé le mois précédent — en
+  rappel de la déclaration. Envoyé à tous les super admins actifs.

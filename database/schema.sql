@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS system_settings (
     vapid_private_key VARCHAR(255) DEFAULT '',
     subscription_auto_suspend_enabled TINYINT(1) NOT NULL DEFAULT 0,
     subscription_grace_period_days INT UNSIGNED NOT NULL DEFAULT 7,
-    anthropic_api_key VARCHAR(255) DEFAULT ''
+    anthropic_api_key VARCHAR(255) DEFAULT '',
+    urssaf_report_day TINYINT UNSIGNED DEFAULT NULL,
+    urssaf_report_last_sent_month VARCHAR(7) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -922,6 +924,24 @@ CREATE TABLE IF NOT EXISTS organization_subscription_items (
     CONSTRAINT fk_sub_items_sub FOREIGN KEY (organization_subscription_id) REFERENCES organization_subscriptions(id) ON DELETE CASCADE,
     CONSTRAINT fk_sub_items_module FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
     CONSTRAINT fk_sub_items_package FOREIGN KEY (package_id) REFERENCES module_packages(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Journal des encaissements Stripe réels de la plateforme (abonnements et
+-- modules payés par les organisations), pour le rapport URSSAF mensuel de
+-- l'exploitant — voir App\Models\PlatformRevenueTransaction et
+-- bin/send_urssaf_platform_report.php. Alimenté par le webhook invoice.paid
+-- (SubscriptionController::webhook()).
+CREATE TABLE IF NOT EXISTS platform_revenue_transactions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT UNSIGNED DEFAULT NULL,
+    organization_name VARCHAR(190) NOT NULL DEFAULT '',
+    stripe_invoice_id VARCHAR(120) NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    currency VARCHAR(10) NOT NULL DEFAULT 'eur',
+    description VARCHAR(255) DEFAULT '',
+    paid_at DATETIME NOT NULL,
+    CONSTRAINT fk_prt_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
+    UNIQUE KEY uniq_prt_invoice (stripe_invoice_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Invitations envoyées par le super admin à des prospects pour créer leur
