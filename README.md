@@ -191,6 +191,11 @@ qu'un site CyberPanel crée pour sa base de données).
 # dans Super admin > Paramètres système > Facturation), tous les jours à 7h
 # — ne fait réellement quelque chose que le jour du mois configuré
 0 7 * * * php /chemin/vers/EventPlanner/bin/send_urssaf_platform_report.php
+
+# Même chose pour chaque organisation individuellement (désactivé par
+# défaut, à activer par organisation dans Rapports > Aide à la déclaration
+# URSSAF), tous les jours à 7h
+0 7 * * * php /chemin/vers/EventPlanner/bin/send_urssaf_org_reports.php
 ```
 
 ## Fonctionnalités couvertes

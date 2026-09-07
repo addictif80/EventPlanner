@@ -174,6 +174,8 @@ CREATE TABLE IF NOT EXISTS company_settings (
     directory_slug VARCHAR(80) DEFAULT NULL,
     directory_description TEXT,
     directory_specialties VARCHAR(255) DEFAULT '',
+    urssaf_report_day TINYINT UNSIGNED DEFAULT NULL,
+    urssaf_report_last_sent_month VARCHAR(7) DEFAULT NULL,
     CONSTRAINT fk_company_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
     UNIQUE KEY uniq_directory_slug (directory_slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

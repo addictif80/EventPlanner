@@ -13,6 +13,19 @@
   <?php endif; ?>
 </div>
 
+<div class="card mb-4"><div class="card-body">
+  <h3 class="h6">Rapport mensuel automatique par email</h3>
+  <p class="text-muted small">Si renseigné, un PDF détaillant vos encaissements du mois précédent (et le chiffre d'affaires à déclarer) vous est envoyé automatiquement chaque mois, à ce jour-là, en rappel de votre déclaration URSSAF. Laissez vide pour désactiver.</p>
+  <form method="post" action="<?= url('/settings/urssaf-report') ?>" class="d-flex align-items-end gap-2">
+    <?= csrf_field() ?>
+    <div>
+      <label class="form-label small mb-1">Jour du mois</label>
+      <input type="number" min="1" max="28" name="urssaf_report_day" class="form-control form-control-sm" style="width:100px;" placeholder="Ex : 5" value="<?= View::e($company['urssaf_report_day'] !== null ? (string) $company['urssaf_report_day'] : '') ?>">
+    </div>
+    <button class="btn btn-outline-primary btn-sm">Enregistrer</button>
+  </form>
+</div></div>
+
 <form method="get" action="<?= url('/reports/urssaf') ?>" class="d-flex align-items-center gap-2 mb-3">
   <label class="form-label mb-0">Année</label>
   <select name="year" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
