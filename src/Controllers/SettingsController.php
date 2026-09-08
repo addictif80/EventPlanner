@@ -151,6 +151,21 @@ class SettingsController
         redirect('/settings');
     }
 
+    public static function updateUrssafReport(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verifyOrFail();
+
+        $day = input('urssaf_report_day', '');
+        CompanySettings::update([
+            'urssaf_report_day' => $day !== '' ? max(1, min(28, (int) $day)) : null,
+        ]);
+
+        ActivityLog::record('Modification rapport URSSAF automatique', 'company_settings');
+        Session::flash('success', 'Réglages du rapport URSSAF enregistrés.');
+        redirect('/reports/urssaf');
+    }
+
     public static function updateSmtp(): void
     {
         Auth::requireAdmin();

@@ -169,6 +169,7 @@ $router->post('/tasks/{id}/delete', fn($p) => TaskController::destroy($p['id']))
 $router->get('/settings', fn() => SettingsController::index());
 $router->post('/settings/company', fn() => SettingsController::updateCompany());
 $router->post('/settings/directory', fn() => SettingsController::updateDirectory());
+$router->post('/settings/urssaf-report', fn() => SettingsController::updateUrssafReport());
 $router->post('/settings/smtp', fn() => SettingsController::updateSmtp());
 $router->post('/settings/smtp/test', fn() => SettingsController::testSmtp());
 $router->post('/settings/email-templates', fn() => SettingsController::updateEmailTemplates());

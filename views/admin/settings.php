@@ -48,7 +48,8 @@
       <p class="text-muted small mt-2 mb-0">
         URL du webhook à renseigner côté Stripe (Développeurs &gt; Webhooks) :
         événements <code>checkout.session.completed</code>, <code>customer.subscription.updated</code>,
-        <code>customer.subscription.deleted</code>, <code>invoice.payment_failed</code>.
+        <code>customer.subscription.deleted</code>, <code>invoice.payment_failed</code>, <code>invoice.paid</code>
+        (ce dernier alimente le rapport URSSAF mensuel ci-dessous).
       </p>
 
       <hr class="my-4">
@@ -62,6 +63,16 @@
         <div class="col-md-4">
           <label class="form-label">Délai de grâce (jours)</label>
           <input type="number" min="1" name="subscription_grace_period_days" class="form-control" value="<?= View::e((string)($settings['subscription_grace_period_days'] ?? 7)) ?>">
+        </div>
+      </div>
+
+      <hr class="my-4">
+      <h3 class="h6">Rapport URSSAF mensuel (auto-entrepreneur)</h3>
+      <p class="text-muted small">Si renseigné, un rapport PDF du chiffre d'affaires réellement encaissé le mois précédent (paiements Stripe reçus des organisations) est envoyé chaque mois à ce jour-là à tous les super admins actifs, en rappel de la déclaration URSSAF. Nécessite la tâche planifiée <code>bin/send_urssaf_platform_report.php</code> (voir README). Laissez vide pour désactiver.</p>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Jour du mois d'envoi</label>
+          <input type="number" min="1" max="28" name="urssaf_report_day" class="form-control" placeholder="Ex : 5" value="<?= View::e($settings['urssaf_report_day'] !== null ? (string)$settings['urssaf_report_day'] : '') ?>">
         </div>
       </div>
 

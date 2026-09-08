@@ -154,9 +154,10 @@ class Mailer
      * admin in Administration > Paramètres système, not a tenant's own SMTP.
      *
      * @param string|array $to
+     * @param array<int,array{filename:string,mimeType:string,content:string}> $attachments
      * @throws \RuntimeException
      */
-    public static function sendSystem($to, string $subject, string $htmlBody, ?string $textBody = null): void
+    public static function sendSystem($to, string $subject, string $htmlBody, ?string $textBody = null, array $attachments = []): void
     {
         if (Demo::isActive()) {
             Session::flash('info', "Mode démo : aucun email n'est réellement envoyé (le reste de l'action s'exécute normalement).");
@@ -186,7 +187,8 @@ class Mailer
             $recipients,
             $subject,
             EmailDesign::wrap($htmlBody, $senderName),
-            $textBody
+            $textBody,
+            $attachments
         );
     }
 
